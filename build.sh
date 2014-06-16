@@ -6,13 +6,13 @@ while getopts "d" flag; do
    # run docker
    echo "Running in Docker..."
     # remove -d from the list of input arguments
-    shift $((OPTIND-1)) 
+    shift $((OPTIND-1))
     # set a variable OPTIONS with the remaining input arguments to pass to the build command
-    OPTIONS=${@} 
+    OPTIONS=${@}
     # run docker
     docker run --rm -it -v `pwd`:/app --name sencha ghcr.io/bwbohl/sencha-cmd:latest ./build.sh $OPTIONS
    exit
-   ;;   
+   ;;
    \?)
    # Handle invalid options
    ;;
