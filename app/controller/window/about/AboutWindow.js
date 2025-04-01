@@ -39,20 +39,21 @@ Ext.define('EdiromOnline.controller.window.about.AboutWindow', {
         if(view.initialized) return;
         view.initialized = true;
 
-        window.doAJAXRequest('resources/CITATION.cff',
+
+        window.doAJAXRequest('../Edirom-Online-Frontend/resources/CITATION.cff',
             'GET', {}, 
             Ext.bind(function(response){
                 
                 const citation = response.responseText;
-
+                
                 // find keys in citation
+                const title = citation.match(/^title: (.*)/m)[1];
                 const abstract = String(citation.match(/^abstract:\s>-\n(\s+.*\n)+/gm)).replace(/^abstract:\s>-\n/, '');
                 const version = citation.match(/^version: (.*)/m)[1];
-                const title = citation.match(/^title: (.*)/m)[1];
+                const releaseDate = citation.match(/^date\-released: (.*)/m)[1];
                 const license = citation.match(/^license: (.*)/m)[1];
-                const repoUrl = citation.match(/^repository\-code: '(.*)'/m)[1];
-                const releaseDate = citation.match(/^date\-released: '(.*)'/m)[1];
-                const doi = citation.match(/value: ([0-9]+\.[0-9]+\/zenodo\.[0-9]+)/)[1];
+                const repoUrl = citation.match(/^repository\-code: (.*)/m)[1];
+                const doi = citation.match(/value: .*?([0-9]+\.[0-9]+\/zenodo\.[0-9]+)/)[1];
 
                 view.setResult(`
                     <div class="tei_body">
@@ -71,9 +72,12 @@ Ext.define('EdiromOnline.controller.window.about.AboutWindow', {
                             </p>
                         </section>
                     </div>
-                    `);
+                    `);             
 
             }, this)
         );
+
+
+
     }
 });

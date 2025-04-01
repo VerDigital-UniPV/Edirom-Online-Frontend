@@ -19,9 +19,9 @@ authors:
     orcid: https://orcid.org/0000-0003-2915-353X
 identifiers:
   - type: doi
-    value: https://doi.org/10.5281/zenodo.15013104
+    value: 10.5281/zenodo.15013104
     description: Edirom-Online Frontend
-repository-code: 'https://github.com/Edirom/Edirom-Online-Frontend'
+repository-code: https://github.com/Edirom/Edirom-Online-Frontend
 abstract: >-
   Edirom-Online Frontend is the frontend for the Edirom 
   Online which is used for the presentation and
