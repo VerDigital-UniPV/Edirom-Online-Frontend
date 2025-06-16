@@ -23,7 +23,8 @@ function showMovement(movementId) {
 	    'adjustPageHeight': 1,
 	    'header': 'none',
 	    'svgBoundingBoxes': true,
-	    'svgHtml5': true
+	    'svgHtml5': true,
+        'breaks' : 'line' // Added for the studi
     };
 
     /* Load the file using HTTP GET */
