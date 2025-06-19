@@ -1,0 +1,1 @@
+docker cp ./build/. nginx:/usr/share/nginx/html
