@@ -97,7 +97,7 @@ Ext.define('EdiromOnline.view.window.image.AlternativesVerovioImage', {
 						var appBasePath = "@backend.url@";
 					</script>
 					<script
-						src="resources/js/verovio-view.js"></script>
+						src="resources/js/alternatives-verovio-view.js"></script>
 				</body>
 			</html>`;
 
