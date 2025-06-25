@@ -1,4 +1,20 @@
 window.vrvToolkit = new verovio.toolkit();
+
+// Initialize appXPath variable
+let appXPath = [];
+
+// New variables for BYO functionality
+let meiString = "";
+const parser = new DOMParser();
+let meiDOM;
+let meiApps = [];
+const versions = new Map();
+versions.set("edition", "Edition");
+versions.set("#curwenEdition", "Curwen");
+versions.set("#SeaSongs", "Whall");
+versions.set("#a-hugill", "Hugill (a)");
+versions.set("#b-hugill", "Hugill (b)");
+
 showMovement(movementId);
 
 /* add event as constant */
@@ -21,17 +37,29 @@ function showMovement(movementId) {
 	    'pageHeight': initHeight,
 	    'pageWidth': initWidth,
 	    'adjustPageHeight': 1,
+        'footer': "none",
 	    'header': 'none',
-	    'svgBoundingBoxes': true,
+	    'svgBoundingBoxes': false,
 	    'svgHtml5': true,
-        'breaks' : 'line' // Added for the studi
+        'xmlIdChecksum': false,
+        'removeIds': false,
+        'breaks' : 'line', // Added for the studi
+        'appXPathQuery': appXPath,
+        'svgAdditionalAttribute': ["lem@source", "rdg@source", "lem@resp"],
     };
 
     /* Load the file using HTTP GET */
-    var url = appBasePath + "/data/xql/getMusicInMdiv.xql?uri=" + uri + "&edition=" + edition    + "&movementId=" + movementId;
+    var url = appBasePath + "/data/xql/getMusicInMdiv.xql?uri=" + uri + "&edition=" + edition + "&movementId=" + movementId;
     $.get(url, function( data ) {
+        // Store the MEI data for BYO functionality
+        meiString = data;
+        meiDOM = parser.parseFromString(data, "application/xml");
+        
         var svg = vrvToolkit.renderData(data, options);
         $("#output").html(svg);
+        
+        // Initialize BYO functionality after rendering
+        retrieveApp(meiDOM);
         initData();
     }, 'text');
 }
@@ -41,6 +69,8 @@ function initData() {
     pageCount = vrvToolkit.getPageCount();
     
     updatePageData();
+    setupApparatusInteraction(); // Add BYO interaction
+    
     //dispatch vrvToolkitDataInitialized event
     window.dispatchEvent(vrvToolkitDataInitialized);
 }
@@ -90,6 +120,170 @@ function updatePageData() {
                 }
             });
     });
+    
+    // Re-setup apparatus interaction after page update
+    setupApparatusInteraction();
+}
+
+// New function to retrieve apparatus from MEI
+function retrieveApp(meiDOM) {
+    meiApps = [];
+    let apps = meiDOM.querySelectorAll("app");
+    console.log(apps.length + " apparati in current mei file.");
+
+    apps.forEach((app) => {
+        let appObj = {};
+        appObj.id = app.getAttribute("xml:id");
+        appObj.section = app.closest("section")?.getAttribute("xml:id");
+        appObj.measure = app.closest("measure")?.getAttribute("n");
+        let children = [];
+        for (let i = 0; i < app.children.length; i++) {
+            rdgObj = {};
+            rdgObj.tag = app.children[i].tagName;
+            rdgObj.id = app.children[i].getAttribute("xml:id");
+            rdgObj.source = app.children[i].getAttribute("source") != null
+                ? app.children[i].getAttribute("source")
+                : "edition";
+            children.push(rdgObj);
+
+            // draw appSpans in Verovio rendering if app has no measure
+            if (appObj.measure == undefined) {
+                drawAppSpans(app.children[i]);
+            }
+        }
+        appObj.children = children;
+        meiApps.push(appObj);
+    });
+    console.log(meiApps);
+}
+
+// New function to draw apparatus spans
+function drawAppSpans(rdgEl) {
+    let rdgSource = rdgEl.getAttribute("source");
+    let rdgElChildrenIds = [];
+    for (child of rdgEl.children) {
+        let childID = child.getAttribute("xml:id");
+        rdgElChildrenIds.push(childID);
+        let svgEl = document.querySelector("g#" + childID);
+        svgEl?.setAttribute("data-source", rdgSource);
+    }
+}
+
+// New function to setup apparatus interaction
+function setupApparatusInteraction() {
+    console.log("Setting up apparatus interaction...");
+    meiApps.forEach((app) => {
+        let $appRendering = $("#output svg g.app[data-id='" + app.id + "']");
+        console.log(`App ${app.id}:`, $appRendering.length > 0 ? "found" : "not found");
+        if ($appRendering.length > 0) {
+            // Remove existing event listeners using jQuery
+            $appRendering.off('click');
+            
+            // Set cursor style and add click handler using jQuery
+            $appRendering.css('cursor', 'pointer').on('click', function(e) {
+                console.log("Apparatus clicked:", app.id);
+                e.stopPropagation();
+                showApparatusSelection(app);
+            });
+        }
+    });
+}
+
+// New function to show apparatus selection modal/popup
+function showApparatusSelection(app) {
+    // Create a simple selection interface
+    let selectionHtml = `
+        <div id="apparatus-selection" style="
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: white; 
+            border: 2px solid #ccc; 
+            padding: 20px; 
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            max-width: 400px;
+        ">
+            <h3>Select Reading for Apparatus ${app.id}</h3>
+            <div id="reading-options">
+    `;
+    
+    app.children.forEach((child, index) => {
+        let sources = child.source.split(" ");
+        let versionText = sources
+            .map((source) => versions.get(source) || source)
+            .join(" / ");
+            
+        selectionHtml += `
+            <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" 
+                 onclick="selectReading('${child.id}', '${app.id}')" 
+                 onmouseover="this.style.backgroundColor='#f0f0f0'" 
+                 onmouseout="this.style.backgroundColor='white'">
+                <strong>${versionText}</strong>
+                <br><small>ID: ${child.id}</small>
+            </div>
+        `;
+    });
+    
+    selectionHtml += `
+            </div>
+            <button onclick="closeApparatusSelection()" style="
+                margin-top: 15px; 
+                padding: 8px 16px; 
+                background: #007bff; 
+                color: white; 
+                border: none; 
+                border-radius: 4px; 
+                cursor: pointer;
+            ">Cancel</button>
+        </div>
+        <div id="apparatus-overlay" style="
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.5); 
+            z-index: 999;
+        " onclick="closeApparatusSelection()"></div>
+    `;
+    
+    // Add to body
+    $('body').append(selectionHtml);
+}
+
+// New function to select a reading
+function selectReading(rdgId, appId) {
+    console.log(`Selected reading ${rdgId} for apparatus ${appId}`);
+    
+    // Update appXPath to include the selected reading
+    let newXPath = "./*[@xml:id='" + rdgId + "']";
+    
+    // Add to beginning of appXPath array (or replace existing)
+    if (Array.isArray(appXPath)) {
+        // Remove any existing xpath for this apparatus
+        appXPath = appXPath.filter(xpath => !xpath.includes(appId));
+        // Add new xpath at beginning
+        appXPath.unshift(newXPath);
+    } else {
+        appXPath = [newXPath];
+    }
+    
+    console.log("Updated appXPath:", appXPath);
+    
+    // Close selection interface
+    closeApparatusSelection();
+    
+    // Re-render with new selection
+    showMovement(window.movementId);
+}
+
+// New function to close apparatus selection
+function closeApparatusSelection() {
+    $('#apparatus-selection').remove();
+    $('#apparatus-overlay').remove();
 }
 
 function getMeasureIds() {
@@ -155,5 +349,5 @@ function showMeasure(movementId, measureId) {
 function on_vrvToolkitDataInitialized(){
     console.log("event fired and catched");
     if (window.measureId == undefined ) return; 
-    showMeasure(window.movementId, window.measureId); //? set window.measureId to undefined ?
+    showMeasure(window.movementId, window.measureId);
 }
