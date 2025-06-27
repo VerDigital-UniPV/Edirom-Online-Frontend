@@ -189,6 +189,32 @@ function setupApparatusInteraction() {
     });
 }
 
+// New function to render measure preview for apparatus selection
+function renderMeasurePreview(measure, rdgId, targetDiv) {
+    // Create a temporary toolkit instance for preview rendering
+    const previewTk = new verovio.toolkit();
+
+    console.log(`Rendering preview for measure ${measure}, reading ${rdgId}, target div ${targetDiv}.`);
+    
+    previewTk.setOptions({
+        appXPathQuery: ["./*[@xml:id='" + rdgId + "']"],
+        xmlIdChecksum: true,
+        pageWidth: 600,
+        scale: 25,
+        adjustPageHeight: true,
+        footer: "none",
+        header: "none",
+        breaks: "none"
+    });
+    
+    previewTk.loadData(meiString);
+    if (measure) {
+        previewTk.select({ measureRange: measure });
+        previewTk.redoLayout();
+    }
+    targetDiv.innerHTML = previewTk.renderToSVG(1);
+}
+
 // New function to show apparatus selection modal/popup
 function showApparatusSelection(app) {
     // Create a simple selection interface
@@ -204,7 +230,9 @@ function showApparatusSelection(app) {
             z-index: 1000;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
-            max-width: 400px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
         ">
             <h3>Select Reading for Apparatus ${app.id}</h3>
             <div id="reading-options">
@@ -217,12 +245,25 @@ function showApparatusSelection(app) {
             .join(" / ");
             
         selectionHtml += `
-            <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" 
+            <div style="margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" 
                  onclick="selectReading('${child.id}', '${app.id}')" 
                  onmouseover="this.style.backgroundColor='#f0f0f0'" 
                  onmouseout="this.style.backgroundColor='white'">
-                <strong>${versionText}</strong>
-                <br><small>ID: ${child.id}</small>
+                <div style="margin-bottom: 10px;">
+                    <strong>${versionText}</strong>
+                    <br><small>ID: ${child.id}</small>
+                </div>
+                <div id="preview-${child.id}" style="
+                    border: 1px solid #eee; 
+                    padding: 10px; 
+                    background: #fafafa;
+                    min-height: 60px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <span style="color: #666;">Loading preview...</span>
+                </div>
             </div>
         `;
     });
@@ -252,6 +293,22 @@ function showApparatusSelection(app) {
     
     // Add to body
     $('body').append(selectionHtml);
+    
+    // Generate previews for each reading
+    app.children.forEach((child) => {
+        const previewDiv = document.getElementById("preview-" + child.id);
+        if (previewDiv && app.measure !== undefined) {
+            try {
+                renderMeasurePreview(app.measure, child.id, previewDiv);
+            } catch (error) {
+                console.error("Error rendering preview for " + child.id, error);
+                previewDiv.innerHTML = '<span style="color: #999;">Preview unavailable</span>';
+            }
+        } else if (previewDiv) {
+            // For apparatus that span multiple measures, show a general preview
+            previewDiv.innerHTML = '<span style="color: #666;">Multi-measure apparatus</span>';
+        }
+    });
 }
 
 // New function to select a reading
