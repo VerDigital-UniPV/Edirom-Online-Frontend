@@ -180,7 +180,7 @@ function setupApparatusInteraction() {
             $appRendering.off('click');
             
             // Set cursor style and add click handler using jQuery
-            $appRendering.css('cursor', 'pointer').on('click', function(e) {
+            $appRendering.css('cursor', 'pointer').css('outline', '10px dashed blue').on('click', function(e) { // TODO: use classes instead
                 console.log("Apparatus clicked:", app.id);
                 e.stopPropagation();
                 showApparatusSelection(app);
@@ -213,6 +213,13 @@ function renderMeasurePreview(measure, rdgId, targetDiv) {
         previewTk.redoLayout();
     }
     targetDiv.innerHTML = previewTk.renderToSVG(1);
+
+    let $reading = $("#reading-options svg g.rdg[id='" + rdgId + "']");
+    console.log(`Reading ${rdgId}:`, $reading.length > 0 ? "found" : "not found");
+    $reading.css({ // TODO: use classes instead
+        'fill': 'blue',
+        'stroke': 'blue'
+    });
 }
 
 // New function to show apparatus selection modal/popup
