@@ -14,6 +14,11 @@ versions.set("#curwenEdition", "Curwen");
 versions.set("#SeaSongs", "Whall");
 versions.set("#a-hugill", "Hugill (a)");
 versions.set("#b-hugill", "Hugill (b)");
+// TODO: Map the version to a name in the manifestation.
+// It is not easy because the shortend name is nowhere in the mei file.
+// Also we do not want something too long or big, but a shortend name.
+// Maybe define a list of priorities from the manifestations in the xml from which to get this version Map with names.
+// Something like identifier > title > respStmt persName etc...
 
 showMovement(movementId);
 
