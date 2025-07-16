@@ -67,6 +67,16 @@ function showMovement(movementId) {
 function initData() {
     page = 1;
     pageCount = vrvToolkit.getPageCount();
+
+    // Restore saved page if it exists and is valid
+    if (window.savedPage && window.savedPage <= pageCount && window.savedPage > 0) {
+        console.log(`Restoring page ${window.savedPage}`)
+        page = window.savedPage;
+        // Clear the saved page
+        window.savedPage = null;
+        var svg = vrvToolkit.renderToSVG(page);
+        $("#output").html(svg);
+    }
     
     updatePageData();
     setupApparatusInteraction(); // Add BYO interaction
@@ -377,6 +387,9 @@ function showApparatusSelection(app) {
 // New function to select a reading
 function selectReading(rdgId, appId) {
     console.log(`Selected reading ${rdgId} for apparatus ${appId}`);
+
+    // Store current page before re-rendering
+    window.savedPage = page;
     
     // Update appXPath to include the selected reading
     let newXPath = "./*[@xml:id='" + rdgId + "']";
