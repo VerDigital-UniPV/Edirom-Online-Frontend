@@ -70,6 +70,9 @@ function initData() {
     
     updatePageData();
     setupApparatusInteraction(); // Add BYO interaction
+
+    // Optional: call debug function
+    // debugAppMeasures();
     
     //dispatch vrvToolkitDataInitialized event
     window.dispatchEvent(vrvToolkitDataInitialized);
@@ -130,12 +133,49 @@ function retrieveApp(meiDOM) {
     meiApps = [];
     let apps = meiDOM.querySelectorAll("app");
     console.log(apps.length + " apparati in current mei file.");
-
     apps.forEach((app) => {
         let appObj = {};
         appObj.id = app.getAttribute("xml:id");
         appObj.section = app.closest("section")?.getAttribute("xml:id");
         appObj.measure = app.closest("measure")?.getAttribute("n");
+        
+        // Find all measures that contain elements from this apparatus
+        let measureIds = new Set();
+        
+        // Try different selectors for xml:id depending on browser/parser
+        let allElements = app.querySelectorAll("*[xml\\:id]");
+        if (allElements.length === 0) {
+            // Fallback for different XML parsers
+            allElements = app.querySelectorAll("*");
+            allElements = Array.from(allElements).filter(el => el.hasAttribute("xml:id"));
+        }
+        
+        allElements.forEach((element) => {
+            let closestMeasure = element.closest("measure");
+            if (closestMeasure) {
+                let measureId = closestMeasure.getAttribute("xml:id");
+                if (measureId) {
+                    measureIds.add(measureId);
+                }
+            }
+        });
+        
+        // If no measures found from elements, try to find measures that contain this app
+        if (measureIds.size === 0) {
+            let parentMeasure = app.closest("measure");
+            if (parentMeasure && parentMeasure.getAttribute("xml:id")) {
+                measureIds.add(parentMeasure.getAttribute("xml:id"));
+            }
+        }
+        
+        // Convert Set to sorted array and get first/last measures
+        let measureIdArray = Array.from(measureIds).sort();
+        appObj.startMeasureId = measureIdArray.length > 0 ? measureIdArray[0] : null;
+        appObj.endMeasureId = measureIdArray.length > 0 ? measureIdArray[measureIdArray.length - 1] : null;
+        appObj.measureRange = measureIdArray;
+        
+        console.log(`App ${appObj.id}: measures ${appObj.startMeasureId} to ${appObj.endMeasureId}`, measureIdArray);
+        
         let children = [];
         for (let i = 0; i < app.children.length; i++) {
             rdgObj = {};
@@ -145,7 +185,6 @@ function retrieveApp(meiDOM) {
                 ? app.children[i].getAttribute("source")
                 : "edition";
             children.push(rdgObj);
-
             // draw appSpans in Verovio rendering if app has no measure
             if (appObj.measure == undefined) {
                 drawAppSpans(app.children[i]);
@@ -190,11 +229,10 @@ function setupApparatusInteraction() {
 }
 
 // New function to render measure preview for apparatus selection
-function renderMeasurePreview(measure, rdgId, targetDiv) {
+function renderPreview(app, rdgId, targetDiv) {
     // Create a temporary toolkit instance for preview rendering
     const previewTk = new verovio.toolkit();
-
-    console.log(`Rendering preview for measure ${measure}, reading ${rdgId}, target div ${targetDiv}.`);
+    console.log(`Rendering preview for apparatus ${app.id}, reading ${rdgId}`);
     
     previewTk.setOptions({
         appXPathQuery: ["./*[@xml:id='" + rdgId + "']"],
@@ -207,19 +245,40 @@ function renderMeasurePreview(measure, rdgId, targetDiv) {
         breaks: "none"
     });
     
-    previewTk.loadData(meiString);
-    if (measure) {
-        previewTk.select({ measureRange: measure });
-        previewTk.redoLayout();
+    try {
+        previewTk.loadData(meiString);
+        
+        // Use the measure range information from the app object
+        if (app.startMeasureId && app.endMeasureId) {
+            console.log(`Selecting measures: ${app.startMeasureId} to ${app.endMeasureId}`);
+            
+            previewTk.select({ start: app.startMeasureId, end : app.endMeasureId });
+            
+            previewTk.redoLayout();
+        } else if (app.measure) {
+            // Fall back to original measure number if available
+            console.log(`Using fallback measure: ${app.measure}`);
+            previewTk.select({ measureRange: app.measure });
+            previewTk.redoLayout();
+        }
+        // If no measure info available, show entire piece (no select call)
+        
+        targetDiv.innerHTML = previewTk.renderToSVG(1);
+        
+        // Highlight the selected reading
+        setTimeout(() => {
+            let $reading = $(targetDiv).find("svg g.rdg[id='" + rdgId + "']");
+            console.log(`Reading ${rdgId}:`, $reading.length > 0 ? "found" : "not found");
+            $reading.css({
+                'fill': 'blue',
+                'stroke': 'blue'
+            });
+        }, 100);
+        
+    } catch (error) {
+        console.error("Error in renderPreview:", error);
+        targetDiv.innerHTML = '<span style="color: #999;">Preview error: ' + error.message + '</span>';
     }
-    targetDiv.innerHTML = previewTk.renderToSVG(1);
-
-    let $reading = $("#reading-options svg g.rdg[id='" + rdgId + "']");
-    console.log(`Reading ${rdgId}:`, $reading.length > 0 ? "found" : "not found");
-    $reading.css({ // TODO: use classes instead
-        'fill': 'blue',
-        'stroke': 'blue'
-    });
 }
 
 // New function to show apparatus selection modal/popup
@@ -304,16 +363,13 @@ function showApparatusSelection(app) {
     // Generate previews for each reading
     app.children.forEach((child) => {
         const previewDiv = document.getElementById("preview-" + child.id);
-        if (previewDiv && app.measure !== undefined) {
+        if (previewDiv) {
             try {
-                renderMeasurePreview(app.measure, child.id, previewDiv);
+                renderPreview(app, child.id, previewDiv); // Pass full app object
             } catch (error) {
                 console.error("Error rendering preview for " + child.id, error);
                 previewDiv.innerHTML = '<span style="color: #999;">Preview unavailable</span>';
             }
-        } else if (previewDiv) {
-            // For apparatus that span multiple measures, show a general preview
-            previewDiv.innerHTML = '<span style="color: #666;">Multi-measure apparatus</span>';
         }
     });
 }
@@ -414,4 +470,21 @@ function on_vrvToolkitDataInitialized(){
     console.log("event fired and catched");
     if (window.measureId == undefined ) return; 
     showMeasure(window.movementId, window.measureId);
+}
+
+function debugAppMeasures() {
+    console.log("=== Apparatus Measure Debug Info ===");
+    meiApps.forEach(app => {
+        console.log(`App ${app.id}:`);
+        console.log(`  - Section: ${app.section}`);
+        console.log(`  - Measure (n): ${app.measure}`);
+        console.log(`  - Start Measure ID: ${app.startMeasureId}`);
+        console.log(`  - End Measure ID: ${app.endMeasureId}`);
+        console.log(`  - All Measures: [${app.measureRange.join(', ')}]`);
+        console.log(`  - Children: ${app.children.length}`);
+        app.children.forEach(child => {
+            console.log(`    - ${child.tag} (${child.id}): ${child.source}`);
+        });
+        console.log("");
+    });
 }
