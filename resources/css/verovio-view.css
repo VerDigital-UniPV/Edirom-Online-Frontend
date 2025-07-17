@@ -172,3 +172,13 @@ body {
         transform: rotate(360deg);
     }
 }
+
+#output svg g.app.appSelectable {
+    cursor: pointer;
+    outline: 10px dashed blue;
+}
+
+svg g.rdg.rdgCurrentPreview {
+    fill: blue;
+    stroke: blue;
+}

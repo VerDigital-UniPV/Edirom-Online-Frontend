@@ -233,8 +233,11 @@ function setupApparatusInteraction() {
             // Remove existing event listeners using jQuery
             $appRendering.off('click');
             
-            // Set cursor style and add click handler using jQuery
-            $appRendering.css('cursor', 'pointer').css('outline', '10px dashed blue').on('click', function(e) { // TODO: use classes instead
+            // Add class to handle visualization in css
+            $appRendering.addClass("appSelectable")
+
+            // Add click handler using jQuery
+            $appRendering.on('click', function(e) {
                 console.log("Apparatus clicked:", app.id);
                 e.stopPropagation();
                 showApparatusSelection(app);
@@ -284,10 +287,7 @@ function renderPreview(app, rdgId, targetDiv) {
         setTimeout(() => {
             let $reading = $(targetDiv).find("svg g.rdg[id='" + rdgId + "']");
             console.log(`Reading ${rdgId}:`, $reading.length > 0 ? "found" : "not found");
-            $reading.css({
-                'fill': 'blue',
-                'stroke': 'blue'
-            });
+            $reading.addClass("rdgCurrentPreview")
         }, 100);
         
     } catch (error) {
