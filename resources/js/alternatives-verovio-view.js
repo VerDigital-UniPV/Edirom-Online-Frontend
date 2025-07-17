@@ -202,7 +202,7 @@ function retrieveApp(meiDOM) {
             children.push(rdgObj);
             // draw appSpans in Verovio rendering if app has no measure
             if (appObj.measure == undefined) {
-                drawAppSpans(app.children[i]);
+                drawAppSpans(app.children[i]); // TODO See what to do with this. The boxes around seems already enough
             }
         }
         appObj.children = children;
@@ -212,7 +212,7 @@ function retrieveApp(meiDOM) {
 }
 
 // New function to draw apparatus spans
-function drawAppSpans(rdgEl) {
+function drawAppSpans(rdgEl) { // TODO See what to do with this. The boxes around seems already enough
     let rdgSource = rdgEl.getAttribute("source");
     let rdgElChildrenIds = [];
     for (child of rdgEl.children) {
@@ -246,7 +246,7 @@ function setupApparatusInteraction() {
     });
 }
 
-// New function to render measure preview for apparatus selection
+// New function to render preview for apparatus selection
 function renderPreview(app, rdgId, targetDiv) {
     // Create a temporary toolkit instance for preview rendering
     const previewTk = new verovio.toolkit();
@@ -256,7 +256,7 @@ function renderPreview(app, rdgId, targetDiv) {
         appXPathQuery: ["./*[@xml:id='" + rdgId + "']"],
         xmlIdChecksum: true,
         pageWidth: 600,
-        scale: 25,
+        scale: 35, // Slightly larger scale for better visibility of small sections
         adjustPageHeight: true,
         footer: "none",
         header: "none",
@@ -279,7 +279,6 @@ function renderPreview(app, rdgId, targetDiv) {
             previewTk.select({ measureRange: app.measure });
             previewTk.redoLayout();
         }
-        // If no measure info available, show entire piece (no select call)
         
         targetDiv.innerHTML = previewTk.renderToSVG(1);
         
@@ -287,7 +286,10 @@ function renderPreview(app, rdgId, targetDiv) {
         setTimeout(() => {
             let $reading = $(targetDiv).find("svg g.rdg[id='" + rdgId + "']");
             console.log(`Reading ${rdgId}:`, $reading.length > 0 ? "found" : "not found");
-            $reading.addClass("rdgCurrentPreview")
+            $reading.addClass("rdgCurrentPreview");
+            
+            // Also highlight any child elements of this reading
+            $reading.find("*").addClass("rdgCurrentPreview");
         }, 100);
         
     } catch (error) {
@@ -311,11 +313,12 @@ function showApparatusSelection(app) {
             z-index: 1000;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
-            max-width: 600px;
+            max-width: 700px;
             max-height: 80vh;
             overflow-y: auto;
+            font-family: Arial, sans-serif;
         ">
-            <h3>Select Reading for Apparatus ${app.id}</h3>
+            <h3 style="margin-top: 0;">Select Reading for Apparatus ${app.id}</h3>
             <div id="reading-options">
     `;
     
@@ -326,23 +329,15 @@ function showApparatusSelection(app) {
             .join(" / ");
             
         selectionHtml += `
-            <div style="margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" 
+            <div class="apparatus-selection-option" 
                  onclick="selectReading('${child.id}', '${app.id}')" 
-                 onmouseover="this.style.backgroundColor='#f0f0f0'" 
-                 onmouseout="this.style.backgroundColor='white'">
+                 data-reading-id="${child.id}">
                 <div style="margin-bottom: 10px;">
                     <strong>${versionText}</strong>
                     <br><small>ID: ${child.id}</small>
+                    ${child.affectedElements ? `<br><small>Affects ${child.affectedElements.length} elements</small>` : ''}
                 </div>
-                <div id="preview-${child.id}" style="
-                    border: 1px solid #eee; 
-                    padding: 10px; 
-                    background: #fafafa;
-                    min-height: 60px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                ">
+                <div id="preview-${child.id}" class="apparatus-preview-container">
                     <span style="color: #666;">Loading preview...</span>
                 </div>
             </div>
@@ -351,15 +346,17 @@ function showApparatusSelection(app) {
     
     selectionHtml += `
             </div>
-            <button onclick="closeApparatusSelection()" style="
-                margin-top: 15px; 
-                padding: 8px 16px; 
-                background: #007bff; 
-                color: white; 
-                border: none; 
-                border-radius: 4px; 
-                cursor: pointer;
-            ">Cancel</button>
+            <div style="margin-top: 15px; text-align: center;">
+                <button onclick="closeApparatusSelection()" style="
+                    padding: 8px 16px; 
+                    background: #007bff; 
+                    color: white; 
+                    border: none; 
+                    border-radius: 4px; 
+                    cursor: pointer;
+                    font-size: 14px;
+                ">Cancel</button>
+            </div>
         </div>
         <div id="apparatus-overlay" style="
             position: fixed; 
@@ -380,13 +377,22 @@ function showApparatusSelection(app) {
         const previewDiv = document.getElementById("preview-" + child.id);
         if (previewDiv) {
             try {
-                renderPreview(app, child.id, previewDiv); // Pass full app object
+                renderPreview(app, child.id, previewDiv);
             } catch (error) {
                 console.error("Error rendering preview for " + child.id, error);
                 previewDiv.innerHTML = '<span style="color: #999;">Preview unavailable</span>';
             }
         }
     });
+}
+
+// Helper function to highlight selection option
+function highlightSelectionOption(rdgId) {
+    // Remove previous highlights
+    $('.apparatus-selection-option').removeClass('selected');
+    
+    // Highlight the selected option
+    $(`.apparatus-selection-option[data-reading-id="${rdgId}"]`).addClass('selected');
 }
 
 // New function to select a reading

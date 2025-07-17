@@ -173,12 +173,76 @@ body {
     }
 }
 
+/* CSS for the alternative selector view */
 #output svg g.app.appSelectable {
     cursor: pointer;
     outline: 10px dashed blue;
 }
 
-svg g.rdg.rdgCurrentPreview {
-    fill: blue;
-    stroke: blue;
+/* CSS for apparatus preview highlighting */
+.rdgCurrentPreview {
+    stroke: #ff6b6b !important;
+    stroke-width: 2px !important;
+    fill: #ff6b6b !important;
+    opacity: 0.8 !important;
+}
+
+.rdgCurrentPreview path {
+    stroke: #ff6b6b !important;
+    stroke-width: 2px !important;
+    fill: #ff6b6b !important;
+}
+
+.rdgCurrentPreview text {
+    fill: #ff6b6b !important;
+    font-weight: bold !important;
+}
+
+/* Style for preview containers */
+.apparatus-preview-container {
+    border: 1px solid #eee;
+    padding: 10px;
+    background: #fafafa;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.apparatus-preview-container svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Highlight apparatus elements that are selectable */
+.appSelectable {
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.appSelectable:hover {
+    opacity: 1;
+    stroke: #007bff;
+    stroke-width: 2px;
+}
+
+/* Style for the apparatus selection modal */
+.apparatus-selection-option {
+    margin: 10px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.apparatus-selection-option:hover {
+    background-color: #f0f0f0;
+}
+
+.apparatus-selection-option.selected {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
 }
