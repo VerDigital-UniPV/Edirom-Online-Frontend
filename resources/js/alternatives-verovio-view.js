@@ -143,9 +143,6 @@ function updatePageData() {
                 }
             });
     });
-    
-    // Re-setup apparatus interaction after page update
-    setupApparatusInteraction();
 }
 
 // New function to retrieve apparatus from MEI
@@ -463,6 +460,7 @@ function prevPage() {
     var svg = vrvToolkit.renderToSVG(page);
     renderSVG(svg);
     updatePageData();
+    setupApparatusInteraction();
 }
 
 function nextPage() {
@@ -471,6 +469,7 @@ function nextPage() {
     var svg = vrvToolkit.renderToSVG(page);
     renderSVG(svg);
     updatePageData();
+    setupApparatusInteraction();
 }
 
 /**
@@ -481,6 +480,7 @@ function showPage() {
     var svg = vrvToolkit.renderToSVG(page);
     renderSVG(svg);
     updatePageData();
+    setupApparatusInteraction();
 }
 
 function showLoader() {
