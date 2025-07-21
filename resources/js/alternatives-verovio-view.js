@@ -147,67 +147,29 @@ function retrieveApp(meiDOM) {
     meiApps = [];
     let apps = meiDOM.querySelectorAll("app");
     console.log(apps.length + " apparati in current mei file.");
+
     apps.forEach((app) => {
-        let appObj = {};
-        appObj.id = app.getAttribute("xml:id");
-        appObj.section = app.closest("section")?.getAttribute("xml:id");
-        appObj.measure = app.closest("measure")?.getAttribute("n");
-        
-        // Find all measures that contain elements from this apparatus
-        let measureIds = new Set();
-        
-        // Try different selectors for xml:id depending on browser/parser
-        let allElements = app.querySelectorAll("*[xml\\:id]");
-        if (allElements.length === 0) {
-            // Fallback for different XML parsers
-            allElements = app.querySelectorAll("*");
-            allElements = Array.from(allElements).filter(el => el.hasAttribute("xml:id"));
-        }
-        
-        allElements.forEach((element) => {
-            let closestMeasure = element.closest("measure");
-            if (closestMeasure) {
-                let measureId = closestMeasure.getAttribute("xml:id");
-                if (measureId) {
-                    measureIds.add(measureId);
-                }
-            }
+        let appId = app.getAttribute("xml:id");
+        let section = app.closest("section")?.getAttribute("xml:id");
+        let measure = app.closest("measure")?.getAttribute("n");
+
+        meiApps.push({
+            id: appId,
+            section: section,
+            measure: measure
         });
-        
-        // If no measures found from elements, try to find measures that contain this app
-        if (measureIds.size === 0) {
-            let parentMeasure = app.closest("measure");
-            if (parentMeasure && parentMeasure.getAttribute("xml:id")) {
-                measureIds.add(parentMeasure.getAttribute("xml:id"));
-            }
-        }
-        
-        // Convert Set to sorted array and get first/last measures
-        let measureIdArray = Array.from(measureIds).sort();
-        appObj.startMeasureId = measureIdArray.length > 0 ? measureIdArray[0] : null;
-        appObj.endMeasureId = measureIdArray.length > 0 ? measureIdArray[measureIdArray.length - 1] : null;
-        appObj.measureRange = measureIdArray;
-        
-        console.log(`App ${appObj.id}: measures ${appObj.startMeasureId} to ${appObj.endMeasureId}`, measureIdArray);
-        
-        let children = [];
-        for (let i = 0; i < app.children.length; i++) {
-            rdgObj = {};
-            rdgObj.tag = app.children[i].tagName;
-            rdgObj.id = app.children[i].getAttribute("xml:id");
-            rdgObj.source = app.children[i].getAttribute("source") != null
-                ? app.children[i].getAttribute("source")
-                : "edition";
-            children.push(rdgObj);
-            // draw appSpans in Verovio rendering if app has no measure
-            if (appObj.measure == undefined) {
-                drawAppSpans(app.children[i]); // TODO See what to do with this. The boxes around seems already enough
-            }
-        }
-        appObj.children = children;
-        meiApps.push(appObj);
     });
-    console.log(meiApps);
+
+    console.log("Reduced apparatus list:", meiApps);
+}
+
+function getAppById(appId) {
+    const apps = meiDOM.getElementsByTagName("app");
+    for (let i = 0; i < apps.length; i++) {
+        const id = apps[i].getAttributeNS("http://www.w3.org/XML/1998/namespace", "id");
+        if (id === appId) return apps[i];
+    }
+    return null;
 }
 
 // New function to draw apparatus spans
@@ -225,9 +187,9 @@ function drawAppSpans(rdgEl) { // TODO See what to do with this. The boxes aroun
 // New function to setup apparatus interaction
 function setupApparatusInteraction() {
     console.log("Setting up apparatus interaction...");
-    meiApps.forEach((app) => {
-        let $appRendering = $("#output svg g.app[data-id='" + app.id + "']");
-        console.log(`App ${app.id}:`, $appRendering.length > 0 ? "found" : "not found");
+    meiApps.forEach((appRef) => {
+        let $appRendering = $("#output svg g.app[data-id='" + appRef.id + "']");
+        console.log(`App ${appRef.id}:`, $appRendering.length > 0 ? "found" : "not found");
         if ($appRendering.length > 0) {
             // Remove existing event listeners using jQuery
             $appRendering.off('click');
@@ -237,9 +199,9 @@ function setupApparatusInteraction() {
 
             // Add click handler using jQuery
             $appRendering.on('click', function(e) {
-                console.log("Apparatus clicked:", app.id);
+                console.log("Apparatus clicked:", appRef.id);
                 e.stopPropagation();
-                showApparatusSelection(app);
+                showApparatusSelection(appRef);
             });
         }
     });
@@ -248,12 +210,19 @@ function setupApparatusInteraction() {
 let previewToolkitInstance = null;
 
 // New function to render preview for apparatus selection
-function renderPreview(app, rdgId, targetDiv) {
+function renderPreview(appRef, rdgId, targetDiv) {
+    console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
+    const appEl = getAppById(appRef.id);
+    if (!appEl) {
+        targetDiv.innerHTML = '<span style="color: #999;">App not found</span>';
+        return;
+    }
+
     if (!previewToolkitInstance) {
         previewToolkitInstance = new verovio.toolkit();
     }
     const previewTk = previewToolkitInstance;
-    console.log(`Rendering preview for apparatus ${app.id}, reading ${rdgId}`);
+    console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
     
     previewTk.setOptions({
         appXPathQuery: ["./*[@xml:id='" + rdgId + "']"],
@@ -269,20 +238,18 @@ function renderPreview(app, rdgId, targetDiv) {
     try {
         previewTk.loadData(meiString);
         
-        // Use the measure range information from the app object
-        if (app.startMeasureId && app.endMeasureId) {
-            console.log(`Selecting measures: ${app.startMeasureId} to ${app.endMeasureId}`);
-            
-            previewTk.select({ start: app.startMeasureId, end : app.endMeasureId });
-            
-            previewTk.redoLayout();
-        } else if (app.measure) {
-            // Fall back to original measure number if available
-            console.log(`Using fallback measure: ${app.measure}`);
-            previewTk.select({ measure: app.measure });
+        // Measure range lookup can now be dynamically computed from `appEl`
+        const measureIdArray = getMeasureIdsForApp(appEl);
+        const measureStartId = measureIdArray[0] || null;
+        const measureEndId = measureIdArray.at(-1) || null;
+
+        console.log(`Selecting measures: ${measureStartId} to ${measureEndId}`);
+
+        if (measureStartId && measureEndId) {
+            previewTk.select({ start: measureStartId, end: measureEndId });
             previewTk.redoLayout();
         }
-        
+
         targetDiv.innerHTML = previewTk.renderToSVG(1);
         
         // Highlight the selected reading
@@ -301,8 +268,39 @@ function renderPreview(app, rdgId, targetDiv) {
     }
 }
 
+function getMeasureIdsForApp(appEl) { // TODO: See if what was used previously to create the copy can be used again here
+    const measureIds = new Set();
+
+    const walker = document.createTreeWalker(appEl, NodeFilter.SHOW_ELEMENT, null, false);
+
+    while (walker.nextNode()) {
+        const el = walker.currentNode;
+
+        const id = el.getAttributeNS("http://www.w3.org/XML/1998/namespace", "id");
+        if (!id) continue;
+
+        const measureEl = el.closest("measure");
+        if (measureEl) {
+            const measureId = measureEl.getAttributeNS("http://www.w3.org/XML/1998/namespace", "id");
+            if (measureId) {
+                measureIds.add(measureId);
+            }
+        }
+    }
+
+    return Array.from(measureIds).sort();  // Sort to get first and last
+}
+
 // New function to show apparatus selection modal/popup
-function showApparatusSelection(app) {
+function showApparatusSelection(appRef) {
+    const appEl = getAppById(appRef.id);
+    if (!appEl) {
+        console.error(`App with id ${appRef.id} not found in MEI DOM.`);
+        return;
+    }
+
+    const children = Array.from(appEl.children);
+
     // Create a simple selection interface
     let selectionHtml = `
         <div id="apparatus-selection" style="
@@ -321,26 +319,28 @@ function showApparatusSelection(app) {
             overflow-y: auto;
             font-family: Arial, sans-serif;
         ">
-            <h3 style="margin-top: 0;">Select Reading for Apparatus ${app.id}</h3>
+            <h3 style="margin-top: 0;">Select Reading for Apparatus ${appRef.id}</h3>
             <div id="reading-options">
     `;
     
-    app.children.forEach((child, index) => {
-        let sources = child.source.split(" ");
+    children.forEach((child) => {
+        const childId = child.getAttribute("xml:id");
+        const sourceAttr = child.getAttribute("source") || "edition";
+
+        const sources = sourceAttr.split(" ");
         let versionText = sources
             .map((source) => versions.get(source) || source)
             .join(" / ");
             
         selectionHtml += `
             <div class="apparatus-selection-option" 
-                 onclick="selectReading('${child.id}', '${app.id}')" 
-                 data-reading-id="${child.id}">
+                 onclick="selectReading('${childId}', '${appRef.id}')" 
+                 data-reading-id="${childId}">
                 <div style="margin-bottom: 10px;">
                     <strong>${versionText}</strong>
-                    <br><small>ID: ${child.id}</small>
-                    ${child.affectedElements ? `<br><small>Affects ${child.affectedElements.length} elements</small>` : ''}
+                    <br><small>ID: ${childId}</small>
                 </div>
-                <div id="preview-${child.id}" class="apparatus-preview-container">
+                <div id="preview-${childId}" class="apparatus-preview-container">
                     <span style="color: #666;">Loading preview...</span>
                 </div>
             </div>
@@ -376,13 +376,14 @@ function showApparatusSelection(app) {
     $('body').append(selectionHtml);
     
     // Generate previews for each reading
-    app.children.forEach((child) => {
-        const previewDiv = document.getElementById("preview-" + child.id);
+    children.forEach((child) => {
+        const childId = child.getAttribute("xml:id");
+        const previewDiv = document.getElementById("preview-" + childId);
         if (previewDiv) {
             try {
-                renderPreview(app, child.id, previewDiv);
+                renderPreview(appRef, childId, previewDiv);
             } catch (error) {
-                console.error("Error rendering preview for " + child.id, error);
+                console.error("Error rendering preview for " + childId, error);
                 previewDiv.innerHTML = '<span style="color: #999;">Preview unavailable</span>';
             }
         }
