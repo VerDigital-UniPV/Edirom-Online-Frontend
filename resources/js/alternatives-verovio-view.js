@@ -1,13 +1,13 @@
 window.vrvToolkit = new verovio.toolkit();
 
-// Initialize appXPath variable
+// === BYO State and Tools === //
 let appXPath = [];
-
-// New variables for BYO functionality
 let meiString = "";
 const parser = new DOMParser();
 let meiDOM;
 let meiApps = [];
+
+// === Edition Labels Map === //
 const versions = new Map();
 versions.set("edition", "Edition");
 versions.set("#curwenEdition", "Curwen");
@@ -20,13 +20,12 @@ versions.set("#b-hugill", "Hugill (b)");
 // Maybe define a list of priorities from the manifestations in the xml from which to get this version Map with names.
 // Something like identifier > title > respStmt persName etc...
 
-showMovement(movementId);
-
-/* add event as constant */
+// === Global Event Hook === //
 const vrvToolkitDataInitialized = new Event("vrvToolkitDataInitialized");
-
-/* add event listener to window */
 window.addEventListener('vrvToolkitDataInitialized', (e) => {on_vrvToolkitDataInitialized()}, false);
+
+// === Entry Point === //
+showMovement(movementId);
 
 function showMovement(movementId) {        
     
