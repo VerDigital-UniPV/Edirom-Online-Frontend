@@ -407,10 +407,10 @@ function selectReading(rdgId, appId) {
 
     // Store current page before re-rendering
     window.savedPage = page;
-    
+
     // Update appXPath to include the selected reading
     let newXPath = "./*[@xml:id='" + rdgId + "']";
-    
+
     // Add to beginning of appXPath array (or replace existing)
     if (Array.isArray(appXPath)) {
         // Remove any existing xpath for this apparatus
@@ -420,12 +420,22 @@ function selectReading(rdgId, appId) {
     } else {
         appXPath = [newXPath];
     }
-    
+
     console.log("Updated appXPath:", appXPath);
-    
+
     // Close selection interface
     closeApparatusSelection();
-    
+
+    // Clean up preview toolkit instance to free memory
+    if (window.previewToolkitInstance) {
+        try {
+            window.previewToolkitInstance.setOptions({});
+        } catch (e) {
+            console.warn("Failed to reset preview toolkit options", e);
+        }
+        window.previewToolkitInstance = null;
+    }
+
     // Re-render with new selection
     showMovement(window.movementId);
 }
@@ -435,10 +445,7 @@ function closeApparatusSelection() {
     $('#apparatus-selection').remove();
     $('#apparatus-overlay').remove();
 
-    // Force garbage collection where possible (in dev tools) and clean preview toolkit
-    if (previewToolkitInstance) {
-        previewToolkitInstance = null; // Let it be GC'ed
-    }
+    console.log("Apparatus selection modal closed.");
 }
 
 function getMeasureIds() {
