@@ -90,9 +90,6 @@ function initData() {
     
     updatePageData();
     setupApparatusInteraction(); // Add BYO interaction
-
-    // Optional: call debug function
-    // debugAppMeasures();
     
     //dispatch vrvToolkitDataInitialized event
     window.dispatchEvent(vrvToolkitDataInitialized);
@@ -282,7 +279,7 @@ function renderPreview(app, rdgId, targetDiv) {
         } else if (app.measure) {
             // Fall back to original measure number if available
             console.log(`Using fallback measure: ${app.measure}`);
-            previewTk.select({ measureRange: app.measure });
+            previewTk.select({ measure: app.measure });
             previewTk.redoLayout();
         }
         
@@ -515,21 +512,4 @@ function on_vrvToolkitDataInitialized(){
     console.log("event fired and catched");
     if (window.measureId == undefined ) return; 
     showMeasure(window.movementId, window.measureId);
-}
-
-function debugAppMeasures() {
-    console.log("=== Apparatus Measure Debug Info ===");
-    meiApps.forEach(app => {
-        console.log(`App ${app.id}:`);
-        console.log(`  - Section: ${app.section}`);
-        console.log(`  - Measure (n): ${app.measure}`);
-        console.log(`  - Start Measure ID: ${app.startMeasureId}`);
-        console.log(`  - End Measure ID: ${app.endMeasureId}`);
-        console.log(`  - All Measures: [${app.measureRange.join(', ')}]`);
-        console.log(`  - Children: ${app.children.length}`);
-        app.children.forEach(child => {
-            console.log(`    - ${child.tag} (${child.id}): ${child.source}`);
-        });
-        console.log("");
-    });
 }
