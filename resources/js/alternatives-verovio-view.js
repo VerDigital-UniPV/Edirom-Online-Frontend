@@ -410,7 +410,7 @@ function selectReading(rdgId, appId) {
 
     // Add to beginning of appXPath array (or replace existing)
     if (Array.isArray(appXPath)) {
-        // Remove any existing xpath for this apparatus
+        // Remove any existing xpath for this apparatus TODO: Check this!!!
         appXPath = appXPath.filter(xpath => !xpath.includes(appId));
         // Add new xpath at beginning
         appXPath.unshift(newXPath);
@@ -445,7 +445,7 @@ function closeApparatusSelection() {
     console.log("Apparatus selection modal closed.");
 }
 
-function getMeasureIds() {
+function getMeasureIds() { // TODO: the fucntion is there in the original verovio-view, but not used
     var measureIds = "";
     $("#output svg .measure").each(function(n, measure) { measureIds += measure.id + ","; } );
     return measureIds;
