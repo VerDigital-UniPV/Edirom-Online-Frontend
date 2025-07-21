@@ -61,6 +61,7 @@ function showMovement(movementId) {
         meiDOM = parser.parseFromString(data, "application/xml");
         
         var svg = vrvToolkit.renderData(data, options);
+        $("#output").find("*").off(); // Remove all jQuery-bound handlers
         $("#output").html(svg);
         
         // Initialize BYO functionality after rendering
@@ -80,6 +81,7 @@ function initData() {
         // Clear the saved page
         window.savedPage = null;
         var svg = vrvToolkit.renderToSVG(page);
+        $("#output").find("*").off(); // Remove all jQuery-bound handlers
         $("#output").html(svg);
     }
     
@@ -246,10 +248,14 @@ function setupApparatusInteraction() {
     });
 }
 
+let previewToolkitInstance = null;
+
 // New function to render preview for apparatus selection
 function renderPreview(app, rdgId, targetDiv) {
-    // Create a temporary toolkit instance for preview rendering
-    const previewTk = new verovio.toolkit();
+    if (!previewToolkitInstance) {
+        previewToolkitInstance = new verovio.toolkit();
+    }
+    const previewTk = previewToolkitInstance;
     console.log(`Rendering preview for apparatus ${app.id}, reading ${rdgId}`);
     
     previewTk.setOptions({
@@ -428,6 +434,11 @@ function selectReading(rdgId, appId) {
 function closeApparatusSelection() {
     $('#apparatus-selection').remove();
     $('#apparatus-overlay').remove();
+
+    // Force garbage collection where possible (in dev tools) and clean preview toolkit
+    if (previewToolkitInstance) {
+        previewToolkitInstance = null; // Let it be GC'ed
+    }
 }
 
 function getMeasureIds() {
@@ -440,6 +451,7 @@ function prevPage() {
     if(page == 1) return;
     page--;
     var svg = vrvToolkit.renderToSVG(page);
+    $("#output").find("*").off(); // Remove all jQuery-bound handlers
     $("#output").html(svg);
     updatePageData();
 }
@@ -448,6 +460,7 @@ function nextPage() {
     if(page == pageCount) return;
     page++;
     var svg = vrvToolkit.renderToSVG(page);
+    $("#output").find("*").off(); // Remove all jQuery-bound handlers
     $("#output").html(svg);
     updatePageData();
 }
@@ -458,6 +471,7 @@ function nextPage() {
 function showPage() {
     if(page == 0) return;
     var svg = vrvToolkit.renderToSVG(page);
+    $("#output").find("*").off(); // Remove all jQuery-bound handlers
     $("#output").html(svg);
     updatePageData();
 }
