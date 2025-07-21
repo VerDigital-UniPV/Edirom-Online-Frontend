@@ -27,46 +27,50 @@ window.addEventListener('vrvToolkitDataInitialized', (e) => {on_vrvToolkitDataIn
 // === Entry Point === //
 showMovement(movementId);
 
-function showMovement(movementId) {        
-    
+function showMovement(movementId) {
     showLoader();
-    
     window.movementId = movementId;
-    
-    var initHeight = Math.floor($(document).height() * 100.0 / 33.0) - 35;
-    var initWidth = Math.floor($(document).width() * 100.0 / 33.0);
 
-    var options = {
-        'scale': 33,
-	    'pageHeight': initHeight,
-	    'pageWidth': initWidth,
-	    'adjustPageHeight': 1,
-        'footer': "none",
-	    'header': 'none',
-	    'svgBoundingBoxes': false,
-	    'svgHtml5': true,
-        'xmlIdChecksum': false,
-        'removeIds': false,
-        'breaks' : 'line', // Added for the studi
-        'appXPathQuery': appXPath,
-        'svgAdditionalAttribute': ["lem@source", "rdg@source", "lem@resp"],
+    const initHeight = Math.floor($(document).height() * 100.0 / 33.0) - 35;
+    const initWidth = Math.floor($(document).width() * 100.0 / 33.0);
+
+    const options = {
+        scale: 33,
+        pageHeight: initHeight,
+        pageWidth: initWidth,
+        adjustPageHeight: 1,
+        footer: "none",
+        header: "none",
+        svgBoundingBoxes: false,
+        svgHtml5: true,
+        xmlIdChecksum: false,
+        removeIds: false,
+        breaks: "line", // Added for the studi
+        appXPathQuery: appXPath,
+        svgAdditionalAttribute: [
+            "lem@source",
+            "rdg@source",
+            "lem@resp"
+        ],
     };
 
-    /* Load the file using HTTP GET */
-    var url = appBasePath + "/data/xql/getMusicInMdiv.xql?uri=" + uri + "&edition=" + edition + "&movementId=" + movementId;
-    $.get(url, function( data ) {
-        // Store the MEI data for BYO functionality
+    const url = `${appBasePath}/data/xql/getMusicInMdiv.xql?uri=${uri}&edition=${edition}&movementId=${movementId}`;
+
+    $.get(url, function (data) {
         meiString = data;
         meiDOM = parser.parseFromString(data, "application/xml");
-        
-        var svg = vrvToolkit.renderData(data, options);
-        $("#output").find("*").off(); // Remove all jQuery-bound handlers
-        $("#output").html(svg);
-        
-        // Initialize BYO functionality after rendering
+
+        const svg = vrvToolkit.renderData(data, options);
+        renderSVG(svg);
+
         retrieveApp(meiDOM);
         initData();
     }, 'text');
+}
+
+function renderSVG(svg) {
+    $("#output").find("*").off();  // Unbind all handlers
+    $("#output").html(svg);       // Insert new SVG
 }
 
 function initData() {
@@ -80,8 +84,8 @@ function initData() {
         // Clear the saved page
         window.savedPage = null;
         var svg = vrvToolkit.renderToSVG(page);
-        $("#output").find("*").off(); // Remove all jQuery-bound handlers
-        $("#output").html(svg);
+        
+        renderSVG(svg);
     }
     
     updatePageData();
@@ -457,8 +461,7 @@ function prevPage() {
     if(page == 1) return;
     page--;
     var svg = vrvToolkit.renderToSVG(page);
-    $("#output").find("*").off(); // Remove all jQuery-bound handlers
-    $("#output").html(svg);
+    renderSVG(svg);
     updatePageData();
 }
 
@@ -466,8 +469,7 @@ function nextPage() {
     if(page == pageCount) return;
     page++;
     var svg = vrvToolkit.renderToSVG(page);
-    $("#output").find("*").off(); // Remove all jQuery-bound handlers
-    $("#output").html(svg);
+    renderSVG(svg);
     updatePageData();
 }
 
@@ -477,8 +479,7 @@ function nextPage() {
 function showPage() {
     if(page == 0) return;
     var svg = vrvToolkit.renderToSVG(page);
-    $("#output").find("*").off(); // Remove all jQuery-bound handlers
-    $("#output").html(svg);
+    renderSVG(svg);
     updatePageData();
 }
 
