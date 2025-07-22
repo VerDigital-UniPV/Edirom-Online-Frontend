@@ -7,6 +7,14 @@ const parser = new DOMParser();
 let meiDOM;
 let meiApps = [];
 
+// === Main toolkit state management === //
+let mainToolkitState = {
+    options: null,
+    data: null,
+    currentPage: 1,
+    pageCount: 0
+};
+
 // === Edition Labels Map === //
 const versions = new Map();
 versions.set("edition", "Edition");
@@ -60,12 +68,31 @@ function showMovement(movementId) {
         meiString = data;
         meiDOM = parser.parseFromString(data, "application/xml");
 
+        saveMainToolkitState(options, data);
+
         const svg = vrvToolkit.renderData(data, options);
         renderSVG(svg);
 
         retrieveApp(meiDOM);
         initData();
     }, 'text');
+}
+
+function saveMainToolkitState(options, data) {
+    mainToolkitState.options = {...options}; // Clone options
+    mainToolkitState.data = data;
+    mainToolkitState.pageCount = vrvToolkit.getPageCount();
+}
+
+function restoreMainToolkitState() {
+    if (!mainToolkitState.options || !mainToolkitState.data) {
+        console.warn("No main toolkit state to restore");
+        return;
+    }
+    
+    vrvToolkit.setOptions(mainToolkitState.options);
+    vrvToolkit.loadData(mainToolkitState.data);
+    mainToolkitState.pageCount = vrvToolkit.getPageCount();
 }
 
 function renderSVG(svg) {
@@ -76,11 +103,14 @@ function renderSVG(svg) {
 function initData() {
     page = 1;
     pageCount = vrvToolkit.getPageCount();
+    mainToolkitState.currentPage = page;
+    mainToolkitState.pageCount = pageCount;
 
     // Restore saved page if it exists and is valid
     if (window.savedPage && window.savedPage <= pageCount && window.savedPage > 0) {
         console.log(`Restoring page ${window.savedPage}`)
         page = window.savedPage;
+        mainToolkitState.currentPage = page;
         // Clear the saved page
         window.savedPage = null;
         var svg = vrvToolkit.renderToSVG(page);
@@ -207,9 +237,7 @@ function setupApparatusInteraction() {
     });
 }
 
-let previewToolkitInstance = null;
-
-// New function to render preview for apparatus selection
+// Updated function to render preview using single toolkit
 function renderPreview(appRef, rdgId, targetDiv) {
     console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
     const appEl = getAppById(appRef.id);
@@ -218,25 +246,27 @@ function renderPreview(appRef, rdgId, targetDiv) {
         return;
     }
 
-    if (!previewToolkitInstance) {
-        previewToolkitInstance = new verovio.toolkit();
-    }
-    const previewTk = previewToolkitInstance;
+    // Save current main toolkit state
+    const currentPage = page;
+    
     console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
     
-    previewTk.setOptions({
+    // Configure toolkit for preview
+    const previewOptions = {
         appXPathQuery: ["./*[@xml:id='" + rdgId + "']"],
         xmlIdChecksum: true,
         pageWidth: 600,
         scale: 35, // Slightly larger scale for better visibility of small sections
         adjustPageHeight: true,
+        svgHtml5: true,
         footer: "none",
         header: "none",
         breaks: "none"
-    });
+    };
     
     try {
-        previewTk.loadData(meiString);
+        vrvToolkit.setOptions(previewOptions);
+        vrvToolkit.loadData(meiString);
         
         // Measure range lookup can now be dynamically computed from `appEl`
         const measureIdArray = getMeasureIdsForApp(appEl);
@@ -246,15 +276,16 @@ function renderPreview(appRef, rdgId, targetDiv) {
         console.log(`Selecting measures: ${measureStartId} to ${measureEndId}`);
 
         if (measureStartId && measureEndId) {
-            previewTk.select({ start: measureStartId, end: measureEndId });
-            previewTk.redoLayout();
+            vrvToolkit.select({ start: measureStartId, end: measureEndId });
+            vrvToolkit.redoLayout();
         }
 
-        targetDiv.innerHTML = previewTk.renderToSVG(1);
+        const previewSvg = vrvToolkit.renderToSVG(1);
+        targetDiv.innerHTML = previewSvg;
         
         // Highlight the selected reading
         setTimeout(() => {
-            let $reading = $(targetDiv).find("svg g.rdg[id='" + rdgId + "']");
+            let $reading = $(targetDiv).find("svg g.rdg[data-id='" + rdgId + "']");
             console.log(`Reading ${rdgId}:`, $reading.length > 0 ? "found" : "not found");
             $reading.addClass("rdgCurrentPreview");
             
@@ -265,6 +296,9 @@ function renderPreview(appRef, rdgId, targetDiv) {
     } catch (error) {
         console.error("Error in renderPreview:", error);
         targetDiv.innerHTML = '<span style="color: #999;">Preview error: ' + error.message + '</span>';
+    } finally {
+        // Restore main toolkit state after preview
+        restoreMainToolkitState();
     }
 }
 
@@ -424,17 +458,7 @@ function selectReading(rdgId, appId) {
     // Close selection interface
     closeApparatusSelection();
 
-    // Clean up preview toolkit instance to free memory
-    if (window.previewToolkitInstance) {
-        try {
-            window.previewToolkitInstance.setOptions({});
-        } catch (e) {
-            console.warn("Failed to reset preview toolkit options", e);
-        }
-        window.previewToolkitInstance = null;
-    }
-
-    // Re-render with new selection
+    // Re-render with new selection (this will restore the main toolkit state)
     showMovement(window.movementId);
 }
 
@@ -455,6 +479,7 @@ function getMeasureIds() { // TODO: the fucntion is there in the original verovi
 function prevPage() {
     if(page == 1) return;
     page--;
+    mainToolkitState.currentPage = page;
     var svg = vrvToolkit.renderToSVG(page);
     renderSVG(svg);
     updatePageData();
@@ -464,6 +489,7 @@ function prevPage() {
 function nextPage() {
     if(page == pageCount) return;
     page++;
+    mainToolkitState.currentPage = page;
     var svg = vrvToolkit.renderToSVG(page);
     renderSVG(svg);
     updatePageData();
@@ -475,6 +501,7 @@ function nextPage() {
  */
 function showPage() {
     if(page == 0) return;
+    mainToolkitState.currentPage = page;
     var svg = vrvToolkit.renderToSVG(page);
     renderSVG(svg);
     updatePageData();
@@ -502,6 +529,7 @@ function showMeasure(movementId, measureId) {
     } else if(window.movementId == movementId) {
         if (page == vrvToolkit.getPageWithElement(measureId)) return;
         page = vrvToolkit.getPageWithElement(measureId);
+        mainToolkitState.currentPage = page;
         showPage();
     }
 }
