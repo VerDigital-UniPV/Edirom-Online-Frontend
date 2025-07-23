@@ -435,7 +435,7 @@ function showApparatusSelection(appRef) {
                 }
             }
         });
-    }, 50); // Small delay to ensure UI updates
+    }, 5); // Small delay to ensure UI updates
 }
 
 // Helper function to highlight selection option
