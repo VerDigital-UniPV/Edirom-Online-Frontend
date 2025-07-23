@@ -335,8 +335,8 @@ function showApparatusSelection(appRef) {
 
     const children = Array.from(appEl.children);
 
-    // Create a simple selection interface
-    let selectionHtml = `
+    // Immediately display the window with loading indicator
+    let loadingHtml = `
         <div id="apparatus-selection" style="
             position: fixed; 
             top: 50%; 
@@ -352,36 +352,12 @@ function showApparatusSelection(appRef) {
             max-height: 80vh;
             overflow-y: auto;
             font-family: Arial, sans-serif;
+            text-align: center;
         ">
             <h3 style="margin-top: 0;">Select Reading for Apparatus ${appRef.id}</h3>
-            <div id="reading-options">
-    `;
-    
-    children.forEach((child) => {
-        const childId = child.getAttribute("xml:id");
-        const sourceAttr = child.getAttribute("source") || "edition";
-
-        const sources = sourceAttr.split(" ");
-        let versionText = sources
-            .map((source) => versions.get(source) || source)
-            .join(" / ");
-            
-        selectionHtml += `
-            <div class="apparatus-selection-option" 
-                 onclick="selectReading('${childId}', '${appRef.id}')" 
-                 data-reading-id="${childId}">
-                <div style="margin-bottom: 10px;">
-                    <strong>${versionText}</strong>
-                    <br><small>ID: ${childId}</small>
-                </div>
-                <div id="preview-${childId}" class="apparatus-preview-container">
-                    <span style="color: #666;">Loading preview...</span>
-                </div>
-            </div>
-        `;
-    });
-    
-    selectionHtml += `
+            <div id="apparatus-content">
+                <!-- Loading indicator (clone the existing loader) -->
+                <div class="loading-container" style="padding: 40px;">Loading previews...</div>
             </div>
             <div style="margin-top: 15px; text-align: center;">
                 <button onclick="closeApparatusSelection()" style="
@@ -406,22 +382,60 @@ function showApparatusSelection(appRef) {
         " onclick="closeApparatusSelection()"></div>
     `;
     
-    // Add to body
-    $('body').append(selectionHtml);
+    // Add to body immediately
+    $('body').append(loadingHtml);
     
-    // Generate previews for each reading
-    children.forEach((child) => {
-        const childId = child.getAttribute("xml:id");
-        const previewDiv = document.getElementById("preview-" + childId);
-        if (previewDiv) {
-            try {
-                renderPreview(appRef, childId, previewDiv);
-            } catch (error) {
-                console.error("Error rendering preview for " + childId, error);
-                previewDiv.innerHTML = '<span style="color: #999;">Preview unavailable</span>';
+    // TODO Clone and append the loading spinner
+    //$(".lds-roller").clone().appendTo(".loading-container");
+    
+    // Use setTimeout to allow the UI to update, then load content
+    setTimeout(() => {
+        // Build the actual content
+        let selectionHtml = `<div id="reading-options" style="text-align: left;">`;
+        
+        children.forEach((child) => {
+            const childId = child.getAttribute("xml:id");
+            const sourceAttr = child.getAttribute("source") || "edition";
+
+            const sources = sourceAttr.split(" ");
+            let versionText = sources
+                .map((source) => versions.get(source) || source)
+                .join(" / ");
+                
+            selectionHtml += `
+                <div class="apparatus-selection-option" 
+                     onclick="selectReading('${childId}', '${appRef.id}')" 
+                     data-reading-id="${childId}">
+                    <div style="margin-bottom: 10px;">
+                        <strong>${versionText}</strong>
+                        <br><small>ID: ${childId}</small>
+                    </div>
+                    <div id="preview-${childId}" class="apparatus-preview-container">
+                        <span style="color: #666;">Loading preview...</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        selectionHtml += `</div>`;
+        
+        // Replace the loading content with actual content
+        $('#apparatus-content').html(selectionHtml);
+        
+        // Generate previews for each reading
+        children.forEach((child) => {
+            const childId = child.getAttribute("xml:id");
+            const previewDiv = document.getElementById("preview-" + childId);
+            if (previewDiv) {
+                try {
+                    renderPreview(appRef, childId, previewDiv);
+                } catch (error) {
+                    console.error("Error rendering preview for " + childId, error);
+                    previewDiv.innerHTML = '<span style="color: #999;">Preview unavailable</span>';
+                }
             }
-        }
-    });
+        });
+    }, 50); // Small delay to ensure UI updates
 }
 
 // Helper function to highlight selection option
