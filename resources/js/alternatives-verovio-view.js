@@ -221,36 +221,43 @@ function setupApparatusInteraction() {
         let $appRendering = $("#output svg g.app[data-id='" + appRef.id + "']");
         console.log(`App ${appRef.id}:`, $appRendering.length > 0 ? "found" : "not found");
         if ($appRendering.length > 0 & $appRendering.children().length === 0) {
-            console.log(`App ${appRef.id} empty!`)
-            const svgNS = "http://www.w3.org/2000/svg";
-            const $star = $(document.createElementNS(svgNS, "polygon"))
-            .attr({
-                points: "150,0 185.4,105.3 300,114.6 207.3,185.4 242.7,300 150,229.2 57.3,300 92.7,185.4 0,114.6 114.6,105.3",
-                fill: "gold",
-                stroke: "black",
-                'stroke-width': 2
-            });
-
-            // Find the last visible SVG element before $appRendering
-            const $prev = $appRendering.prevAll().filter(function () {
-                return this.getBBox !== undefined; // Must be an SVG graphics element
-            }).first();
-
-            if ($prev.length > 0) {
-                const bbox = $prev[0].getBBox(); // Get bounding box of the element
-
-                // Position the star just right next to it
-                const x = bbox.x + bbox.width + 10;
-                const y = bbox.y - 10; // Add 10px spacing
-
-                $star.attr("transform", `translate(${x}, ${y})`);
+            let $appEnd = $("#output svg g.systemMilestoneEnd." + appRef.id);
+            if ($appRendering.hasClass("systemElementStart") && $appEnd.length > 0 && !isBetweenEmpty($appRendering, $appEnd)) {
+                console.log(`App ${appRef.id} spans several measures!`)
+                $appRendering = $appRendering.nextUntil($appEnd).addBack().add($appEnd);
+                // TODO: extend also to next system if necessary
             } else {
-                console.warn('No suitable previous element found. Placing star at default position.');
-                $star.attr("transform", "translate(0, 0)");
-            }
+                console.log(`App ${appRef.id} empty!`)
+                const svgNS = "http://www.w3.org/2000/svg";
+                const $star = $(document.createElementNS(svgNS, "polygon"))
+                .attr({
+                    points: "150,0 185.4,105.3 300,114.6 207.3,185.4 242.7,300 150,229.2 57.3,300 92.7,185.4 0,114.6 114.6,105.3",
+                    fill: "gold",
+                    stroke: "black",
+                    'stroke-width': 2
+                });
 
-            // Append the star to the group
-            $appRendering.append($star);
+                // Find the last visible SVG element before $appRendering
+                const $prev = $appRendering.prevAll().filter(function () {
+                    return this.getBBox !== undefined; // Must be an SVG graphics element
+                }).first();
+
+                if ($prev.length > 0) {
+                    const bbox = $prev[0].getBBox(); // Get bounding box of the element
+
+                    // Position the star just right next to it
+                    const x = bbox.x + bbox.width + 10;
+                    const y = bbox.y - 10; // Add 10px spacing
+
+                    $star.attr("transform", `translate(${x}, ${y})`);
+                } else {
+                    console.warn('No suitable previous element found. Placing star at default position.');
+                    $star.attr("transform", "translate(0, 0)");
+                }
+
+                // Append the star to the group
+                $appRendering.append($star);
+            }
         }
 
         if ($appRendering.length > 0) {
@@ -268,6 +275,24 @@ function setupApparatusInteraction() {
             });
         }
     });
+}
+
+function isBetweenEmpty($start, $end) {
+  let isEmpty = true;
+
+  // Traverse siblings between start and end
+  let $node = $start.next();
+  while ($node.length && !$node.is($end)) {
+    console.log($node)
+    // Check if it's not empty
+    if ($node.length > 0 && $node.children().length > 0 && !$node.hasClass("annot")) {
+      isEmpty = false;
+      break;
+    }
+    $node = $node.next();
+  }
+
+  return isEmpty;
 }
 
 // Updated function to render preview using single toolkit
