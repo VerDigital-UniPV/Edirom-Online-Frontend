@@ -220,6 +220,39 @@ function setupApparatusInteraction() {
     meiApps.forEach((appRef) => {
         let $appRendering = $("#output svg g.app[data-id='" + appRef.id + "']");
         console.log(`App ${appRef.id}:`, $appRendering.length > 0 ? "found" : "not found");
+        if ($appRendering.length > 0 & $appRendering.children().length === 0) {
+            console.log(`App ${appRef.id} empty!`)
+            const svgNS = "http://www.w3.org/2000/svg";
+            const $star = $(document.createElementNS(svgNS, "polygon"))
+            .attr({
+                points: "150,0 185.4,105.3 300,114.6 207.3,185.4 242.7,300 150,229.2 57.3,300 92.7,185.4 0,114.6 114.6,105.3",
+                fill: "gold",
+                stroke: "black",
+                'stroke-width': 2
+            });
+
+            // Find the last visible SVG element before $appRendering
+            const $prev = $appRendering.prevAll().filter(function () {
+                return this.getBBox !== undefined; // Must be an SVG graphics element
+            }).first();
+
+            if ($prev.length > 0) {
+                const bbox = $prev[0].getBBox(); // Get bounding box of the element
+
+                // Position the star just right next to it
+                const x = bbox.x + bbox.width + 10;
+                const y = bbox.y - 10; // Add 10px spacing
+
+                $star.attr("transform", `translate(${x}, ${y})`);
+            } else {
+                console.warn('No suitable previous element found. Placing star at default position.');
+                $star.attr("transform", "translate(0, 0)");
+            }
+
+            // Append the star to the group
+            $appRendering.append($star);
+        }
+
         if ($appRendering.length > 0) {
             // Remove existing event listeners using jQuery
             $appRendering.off('click');
