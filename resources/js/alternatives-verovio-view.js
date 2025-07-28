@@ -220,7 +220,7 @@ function setupApparatusInteraction() {
     meiApps.forEach((appRef) => {
         let $appRendering = $("#output svg g.app[data-id='" + appRef.id + "']");
         console.log(`App ${appRef.id}:`, $appRendering.length > 0 ? "found" : "not found");
-        if ($appRendering.length > 0 & $appRendering.children().length === 0) {
+        if ($appRendering.length > 0 && !hasVisibleChild($appRendering)) {
             let $appEnd = $("#output svg g.systemMilestoneEnd." + appRef.id);
             if ($appRendering.hasClass("systemElementStart") && $appEnd.length > 0 && !isBetweenEmpty($appRendering, $appEnd)) {
                 console.log(`App ${appRef.id} spans several measures!`)
@@ -277,22 +277,38 @@ function setupApparatusInteraction() {
     });
 }
 
+function hasVisibleChild($node) {
+    let hasVisible = false;
+    $node.find("*").each(function() {
+        const tag = this.tagName.toLowerCase();
+        console.log(tag)
+        if (tag === 'desc' || tag === 'title' || tag === 'g') return; // skip metadata and groups
+        hasVisible = true;
+        return false; // break out of .each()
+    });
+    return hasVisible;
+}
+
 function isBetweenEmpty($start, $end) {
-  let isEmpty = true;
+    let isEmpty = true;
 
-  // Traverse siblings between start and end
-  let $node = $start.next();
-  while ($node.length && !$node.is($end)) {
-    console.log($node)
-    // Check if it's not empty
-    if ($node.length > 0 && $node.children().length > 0 && !$node.hasClass("annot")) {
-      isEmpty = false;
-      break;
+    // Traverse siblings between start and end
+    let $node = $start.next();
+    while ($node.length && !$node.is($end)) {
+        console.log($node);
+
+        // Skip nodes with class 'annot'
+        if (!$node.hasClass("annot")) {
+            if (hasVisibleChild($node)) {
+                isEmpty = false;
+                break;
+            }
+        }
+
+        $node = $node.next();
     }
-    $node = $node.next();
-  }
 
-  return isEmpty;
+    return isEmpty;
 }
 
 // Updated function to render preview using single toolkit
