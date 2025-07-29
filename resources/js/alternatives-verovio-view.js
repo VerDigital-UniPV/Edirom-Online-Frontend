@@ -121,6 +121,7 @@ function initData() {
     
     updatePageData();
     setupApparatusInteraction(); // Add BYO interaction
+    setupCorrespHighlighting();
     
     //dispatch vrvToolkitDataInitialized event
     window.dispatchEvent(vrvToolkitDataInitialized);
@@ -265,8 +266,20 @@ function setupApparatusInteraction() {
             // Remove existing event listeners using jQuery
             $appRendering.off('click');
             
-            // Add class to handle visualization in css
-            $appRendering.addClass("appSelectable")
+            // Add classes to handle visualization in css
+            $appRendering.children().addClass("rdgSelectable");
+            $appRendering.children().hover(
+                function (event) { // mouseenter
+                    event.stopPropagation();
+                    $appRendering.children().addClass('rdgSelectableHighlight');
+                    $appRendering.children().removeClass("rdgSelectable");
+                },
+                function (event) { // mouseleave
+                    event.stopPropagation();
+                    $appRendering.children().removeClass('rdgSelectableHighlight');
+                    $appRendering.children().addClass("rdgSelectable");
+                }
+            );
 
             // Add click handler using jQuery
             $appRendering.on('click', function(e) {
@@ -278,11 +291,30 @@ function setupApparatusInteraction() {
     });
 }
 
+function setupCorrespHighlighting() {
+    console.log("Setting up corresp highlighting...")
+    document.querySelectorAll('#output svg g.rdg[data-corresp]').forEach(element => {
+        element.addEventListener('mouseenter', () => {
+            const correspGroup = element.getAttribute('data-corresp');
+            document.querySelectorAll(`#output svg g.rdg[data-corresp="${correspGroup}"]`).forEach(el => {
+            el.classList.add('rdgSelectableHighlight');
+            });
+        });
+
+        element.addEventListener('mouseleave', () => {
+            const correspGroup = element.getAttribute('data-corresp');
+            document.querySelectorAll(`#output svg g.rdg[data-corresp="${correspGroup}"]`).forEach(el => {
+            el.classList.remove('rdgSelectableHighlight');
+            });
+        });
+    });
+
+}
+
 function hasVisibleChild($node) {
     let hasVisible = false;
     $node.find("*").each(function() {
         const tag = this.tagName.toLowerCase();
-        console.log(tag)
         if (tag === 'desc' || tag === 'title' || tag === 'g') return; // skip metadata and groups
         hasVisible = true;
         return false; // break out of .each()
@@ -296,8 +328,6 @@ function isBetweenEmpty($start, $end) {
     // Traverse siblings between start and end
     let $node = $start.next();
     while ($node.length && !$node.is($end)) {
-        console.log($node);
-
         // Skip nodes with class 'annot'
         if (!$node.hasClass("annot")) {
             if (hasVisibleChild($node)) {
@@ -602,6 +632,7 @@ function prevPage() {
     renderSVG(svg);
     updatePageData();
     setupApparatusInteraction();
+    setupCorrespHighlighting();
 }
 
 function nextPage() {
@@ -612,6 +643,7 @@ function nextPage() {
     renderSVG(svg);
     updatePageData();
     setupApparatusInteraction();
+    setupCorrespHighlighting();
 }
 
 /**
@@ -624,6 +656,7 @@ function showPage() {
     renderSVG(svg);
     updatePageData();
     setupApparatusInteraction();
+    setupCorrespHighlighting();
 }
 
 function showLoader() {

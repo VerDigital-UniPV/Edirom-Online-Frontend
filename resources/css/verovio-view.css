@@ -212,16 +212,18 @@ body {
 }
 
 /* Highlight apparatus elements that are selectable */
-.appSelectable {
+.rdgSelectable {
     cursor: pointer;
     outline: 10px dashed blue;
     opacity: 0.7;
 }
 
-.appSelectable:hover {
+.rdgSelectableHighlight {
     opacity: 1;
     stroke: #007bff;
     stroke-width: 2px;
+    outline: 10px dashed red;
+    cursor: pointer;
 }
 
 /* Style for the apparatus selection modal */
