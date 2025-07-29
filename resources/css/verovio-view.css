@@ -174,11 +174,6 @@ body {
 }
 
 /* CSS for the alternative selector view */
-#output svg g.app.appSelectable {
-    cursor: pointer;
-    outline: 10px dashed blue;
-}
-
 /* CSS for apparatus preview highlighting */
 .rdgCurrentPreview {
     stroke: #ff6b6b !important;
@@ -219,6 +214,7 @@ body {
 /* Highlight apparatus elements that are selectable */
 .appSelectable {
     cursor: pointer;
+    outline: 10px dashed blue;
     opacity: 0.7;
 }
 
