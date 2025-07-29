@@ -312,7 +312,7 @@ function isBetweenEmpty($start, $end) {
 }
 
 // Updated function to render preview using single toolkit
-function renderPreview(appRef, rdgId, targetDiv) {
+function renderPreview(appRef, rdgId, corresp, targetDiv) {
     console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
     const appEl = getAppById(appRef.id);
     if (!appEl) {
@@ -480,7 +480,7 @@ function showApparatusSelection(appRef) {
                 
             selectionHtml += `
                 <div class="apparatus-selection-option" 
-                     onclick="selectReading('${childId}', '${appRef.id}', '${corresp}')" 
+                     onclick="selectReading('${childId}', '${appRef.id}', '${corresp}')"
                      data-reading-id="${childId}">
                     <div style="margin-bottom: 10px;">
                         <strong>${versionText}</strong>
@@ -492,6 +492,7 @@ function showApparatusSelection(appRef) {
                     </div>
                 </div>
             `;
+            // TODO: take care of corresp to not pass 'null' when it is null. Then change the function.
         });
         
         selectionHtml += `</div>`;
@@ -503,9 +504,10 @@ function showApparatusSelection(appRef) {
         children.forEach((child) => {
             const childId = child.getAttribute("xml:id");
             const previewDiv = document.getElementById("preview-" + childId);
+            const corresp = child.getAttribute("corresp");
             if (previewDiv) {
                 try {
-                    renderPreview(appRef, childId, previewDiv);
+                    renderPreview(appRef, childId, corresp, previewDiv);
                 } catch (error) {
                     console.error("Error rendering preview for " + childId, error);
                     previewDiv.innerHTML = '<span style="color: #999;">Preview unavailable</span>';
@@ -527,7 +529,7 @@ function highlightSelectionOption(rdgId) {
 // New function to select a reading
 function selectReading(rdgId, appId, corresp) {
     console.log(`Selected reading ${rdgId} for apparatus ${appId}`);
-    if (corresp) {
+    if (corresp != 'null') {
         console.log(`Rreading ${rdgId} for apparatus ${appId} is part of a group with corresp ${corresp}`);
         // TODO Warning on which measures it will affect
     }
