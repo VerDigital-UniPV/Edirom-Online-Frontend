@@ -58,7 +58,8 @@ function showMovement(movementId) {
         svgAdditionalAttribute: [
             "lem@source",
             "rdg@source",
-            "lem@resp"
+            "lem@resp",
+            "rdg@corresp"
         ],
     };
 
@@ -324,10 +325,20 @@ function renderPreview(appRef, rdgId, corresp, targetDiv) {
     const currentPage = page;
     
     console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
+
+    // Preview XPath with/without corresp
+    let previewXPath = "";
+    if (corresp) { // Apply the change everywhere there is this correspondence
+        console.log(`Rendering preview with corresp ${corresp}`)
+        previewXPath = "./*[@corresp='" + corresp + "']";
+    } else { // Apply the change locally
+        console.log(`Rendering preview with reading ${rdgId}`)
+        previewXPath = "./*[@xml:id='" + rdgId + "']";
+    }
     
     // Configure toolkit for preview
     const previewOptions = {
-        appXPathQuery: ["./*[@xml:id='" + rdgId + "']"],
+        appXPathQuery: previewXPath,
         xmlIdChecksum: true,
         pageWidth: 600,
         scale: 35, // Slightly larger scale for better visibility of small sections
@@ -365,6 +376,11 @@ function renderPreview(appRef, rdgId, corresp, targetDiv) {
             
             // Also highlight any child elements of this reading
             $reading.find("*").addClass("rdgCurrentPreview");
+
+            // Highlight the entire corresp if present
+            let $correspondence = $(targetDiv).find("svg g.rdg[data-corresp='" + corresp + "']");
+            $correspondence.addClass("rdgCurrentPreview");
+            $correspondence.find("*").addClass("rdgCurrentPreview");
         }, 100);
         
     } catch (error) {
