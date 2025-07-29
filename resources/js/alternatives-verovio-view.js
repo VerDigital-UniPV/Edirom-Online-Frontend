@@ -470,6 +470,8 @@ function showApparatusSelection(appRef) {
         children.forEach((child) => {
             const childId = child.getAttribute("xml:id");
             const sourceAttr = child.getAttribute("source") || "edition";
+            const corresp = child.getAttribute("corresp");
+            console.log(corresp);
 
             const sources = sourceAttr.split(" ");
             let versionText = sources
@@ -478,11 +480,12 @@ function showApparatusSelection(appRef) {
                 
             selectionHtml += `
                 <div class="apparatus-selection-option" 
-                     onclick="selectReading('${childId}', '${appRef.id}')" 
+                     onclick="selectReading('${childId}', '${appRef.id}', '${corresp}')" 
                      data-reading-id="${childId}">
                     <div style="margin-bottom: 10px;">
                         <strong>${versionText}</strong>
                         <br><small>ID: ${childId}</small>
+                        <br><small>Correspondence group: ${corresp}</small>
                     </div>
                     <div id="preview-${childId}" class="apparatus-preview-container">
                         <span style="color: #666;">Loading preview...</span>
@@ -522,14 +525,23 @@ function highlightSelectionOption(rdgId) {
 }
 
 // New function to select a reading
-function selectReading(rdgId, appId) {
+function selectReading(rdgId, appId, corresp) {
     console.log(`Selected reading ${rdgId} for apparatus ${appId}`);
+    if (corresp) {
+        console.log(`Rreading ${rdgId} for apparatus ${appId} is part of a group with corresp ${corresp}`);
+        // TODO Warning on which measures it will affect
+    }
 
     // Store current page before re-rendering
     window.savedPage = page;
 
     // Update appXPath to include the selected reading
-    let newXPath = "./*[@xml:id='" + rdgId + "']";
+    let newXPath = "";
+    if (corresp != 'null') { // Apply the change everywhere there is this correspondence
+        newXPath = "./*[@corresp='" + corresp + "']";
+    } else { // Apply the change locally
+        newXPath = "./*[@xml:id='" + rdgId + "']";
+    }
 
     // Add to beginning of appXPath array (or replace existing)
     if (Array.isArray(appXPath)) {
