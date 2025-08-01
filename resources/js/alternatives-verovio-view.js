@@ -2,6 +2,7 @@ window.vrvToolkit = new verovio.toolkit();
 
 // === BYO State and Tools === //
 let appXPath = [];
+const appXPathMap = new Map();
 let meiString = "";
 const parser = new DOMParser();
 let meiDOM;
@@ -357,14 +358,17 @@ function renderPreview(appRef, rdgId, corresp, targetDiv) {
     console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
 
     // Preview XPath with/without corresp
-    let previewXPath = "";
+    let previewXPathMap = new Map(appXPathMap);
     if (corresp) { // Apply the change everywhere there is this correspondence
         console.log(`Rendering preview with corresp ${corresp}`)
-        previewXPath = "./*[@corresp='" + corresp + "']";
+        previewXPathMap.set(appRef.id, "./*[@corresp='" + corresp + "']");
     } else { // Apply the change locally
         console.log(`Rendering preview with reading ${rdgId}`)
-        previewXPath = "./*[@xml:id='" + rdgId + "']";
+        previewXPathMap.set(appRef.id, "./*[@xml:id='" + rdgId + "']")
     }
+
+    // Build updated previewXPath array
+    let previewXPath = Array.from(previewXPathMap.values());
     
     // Configure toolkit for preview
     const previewOptions = {
@@ -583,23 +587,15 @@ function selectReading(rdgId, appId, corresp) {
     // Store current page before re-rendering
     window.savedPage = page;
 
-    // Update appXPath to include the selected reading
-    let newXPath = "";
+    // Update appXPathMap to include the selected reading
     if (corresp != 'null') { // Apply the change everywhere there is this correspondence
-        newXPath = "./*[@corresp='" + corresp + "']";
+        appXPathMap.set(appId, "./*[@corresp='" + corresp + "']");
     } else { // Apply the change locally
-        newXPath = "./*[@xml:id='" + rdgId + "']";
+        appXPathMap.set(appId, "./*[@xml:id='" + rdgId + "']")
     }
 
-    // Add to beginning of appXPath array (or replace existing)
-    if (Array.isArray(appXPath)) {
-        // Remove any existing xpath for this apparatus TODO: Check this!!!
-        appXPath = appXPath.filter(xpath => !xpath.includes(appId));
-        // Add new xpath at beginning
-        appXPath.unshift(newXPath);
-    } else {
-        appXPath = [newXPath];
-    }
+    // Build updated appXPath array
+    appXPath = Array.from(appXPathMap.values());
 
     console.log("Updated appXPath:", appXPath);
 
