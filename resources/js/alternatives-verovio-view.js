@@ -362,13 +362,26 @@ function renderPreview(appRef, rdgId, corresp, targetDiv) {
     if (corresp) { // Apply the change everywhere there is this correspondence
         console.log(`Rendering preview with corresp ${corresp}`)
         previewXPathMap.set(appRef.id, "./*[@corresp='" + corresp + "']");
+
+
+        let $correspApps = $("#output svg .rdg[data-corresp='" + corresp + "']").parent();
+        console.log($correspApps);
+        $correspApps.each(function() {
+            if (this.classList.contains("app")) {
+                let currentAppId = this.getAttribute("data-id");
+                console.log(`Updating preview selection for app: ${currentAppId}`);
+                previewXPathMap.set(currentAppId, "./*[@corresp='" + corresp + "']");
+            } else {
+                console.log(`The parent element of a reading with corresp ${corresp} is not an app: ${this}`)
+            };         
+        });
     } else { // Apply the change locally
         console.log(`Rendering preview with reading ${rdgId}`)
         previewXPathMap.set(appRef.id, "./*[@xml:id='" + rdgId + "']")
     }
 
     // Build updated previewXPath array
-    let previewXPath = Array.from(previewXPathMap.values());
+    let previewXPath = Array.from(new Set(previewXPathMap.values()));
     
     // Configure toolkit for preview
     const previewOptions = {
@@ -579,23 +592,32 @@ function highlightSelectionOption(rdgId) {
 // New function to select a reading
 function selectReading(rdgId, appId, corresp) {
     console.log(`Selected reading ${rdgId} for apparatus ${appId}`);
-    if (corresp != 'null') {
-        console.log(`Rreading ${rdgId} for apparatus ${appId} is part of a group with corresp ${corresp}`);
-        // TODO Warning on which measures it will affect
-    }
 
     // Store current page before re-rendering
     window.savedPage = page;
 
     // Update appXPathMap to include the selected reading
     if (corresp != 'null') { // Apply the change everywhere there is this correspondence
-        appXPathMap.set(appId, "./*[@corresp='" + corresp + "']");
+        console.log(`Reading ${rdgId} for apparatus ${appId} is part of a group with corresp ${corresp}`);
+        let $correspApps = $("#output svg .rdg[data-corresp='" + corresp + "']").parent();
+        console.log($correspApps);
+        $correspApps.each(function() {
+            if (this.classList.contains("app")) {
+                let currentAppId = this.getAttribute("data-id");
+                console.log(`Updating selection for app: ${currentAppId}`);
+                appXPathMap.set(currentAppId, "./*[@corresp='" + corresp + "']");
+            } else {
+                console.log(`The parent element of a reading with corresp ${corresp} is not an app: ${this}`)
+            };         
+        });
+        
+        // TODO Warning on which measures it will affect
     } else { // Apply the change locally
         appXPathMap.set(appId, "./*[@xml:id='" + rdgId + "']")
     }
 
     // Build updated appXPath array
-    appXPath = Array.from(appXPathMap.values());
+    appXPath = Array.from(new Set(appXPathMap.values()));
 
     console.log("Updated appXPath:", appXPath);
 
