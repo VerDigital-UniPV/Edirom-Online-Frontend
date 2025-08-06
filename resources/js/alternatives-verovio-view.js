@@ -381,7 +381,9 @@ function renderPreview(appRef, rdgId, corresp, targetDiv) {
     }
 
     // Build updated previewXPath array
-    let previewXPath = Array.from(new Set(previewXPathMap.values()));
+    let previewXPathSet = new Set(previewXPathMap.values())
+    // TODO previewXPathSet.delete() // delete the oppiste corresp from here
+    let previewXPath = Array.from(previewXPathSet);
     
     // Configure toolkit for preview
     const previewOptions = {
@@ -617,7 +619,9 @@ function selectReading(rdgId, appId, corresp) {
     }
 
     // Build updated appXPath array
-    appXPath = Array.from(new Set(appXPathMap.values()));
+    let appXPathSet = new Set(appXPathMap.values())
+    // TODO appXPathSet.delete() // delete the oppiste corresp from here
+    appXPath = Array.from(appXPathSet);
 
     console.log("Updated appXPath:", appXPath);
 
