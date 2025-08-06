@@ -1,12 +1,14 @@
 window.vrvToolkit = new verovio.toolkit();
 
 // === BYO State and Tools === //
-let appXPath = [];
-const appXPathMap = new Map();
+let appXPath = new Set();
 let meiString = "";
 const parser = new DOMParser();
 let meiDOM;
 let meiApps = [];
+
+// Add a flag to prevent multiple simultaneous re-renders
+let isRerendering = false;
 
 // === Main toolkit state management === //
 let mainToolkitState = {
@@ -55,7 +57,7 @@ function showMovement(movementId) {
         xmlIdChecksum: false,
         removeIds: false,
         breaks: "line", // Added for the studi
-        appXPathQuery: appXPath,
+        appXPathQuery: Array.from(appXPath),
         svgAdditionalAttribute: [
             "lem@source",
             "rdg@source",
@@ -63,6 +65,8 @@ function showMovement(movementId) {
             "rdg@corresp"
         ],
     };
+
+    console.log("Current appXPath in showMovement: ", appXPath);
 
     const url = `${appBasePath}/data/xql/getMusicInMdiv.xql?uri=${uri}&edition=${edition}&movementId=${movementId}`;
 
@@ -110,7 +114,7 @@ function initData() {
 
     // Restore saved page if it exists and is valid
     if (window.savedPage && window.savedPage <= pageCount && window.savedPage > 0) {
-        console.log(`Restoring page ${window.savedPage}`)
+        console.log(`Restoring page ${window.savedPage} (pageCount: ${pageCount})`)
         page = window.savedPage;
         mainToolkitState.currentPage = page;
         // Clear the saved page
@@ -205,24 +209,12 @@ function getAppById(appId) {
     return null;
 }
 
-// New function to draw apparatus spans
-function drawAppSpans(rdgEl) { // TODO See what to do with this. The boxes around seems already enough
-    let rdgSource = rdgEl.getAttribute("source");
-    let rdgElChildrenIds = [];
-    for (child of rdgEl.children) {
-        let childID = child.getAttribute("xml:id");
-        rdgElChildrenIds.push(childID);
-        let svgEl = document.querySelector("g#" + childID);
-        svgEl?.setAttribute("data-source", rdgSource);
-    }
-}
-
 // New function to setup apparatus interaction
 function setupApparatusInteraction() {
     console.log("Setting up apparatus interaction...");
     meiApps.forEach((appRef) => {
         let $appRendering = $("#output svg g.app[data-id='" + appRef.id + "']");
-        console.log(`App ${appRef.id}:`, $appRendering.length > 0 ? "found" : "not found");
+        //console.log(`App ${appRef.id}:`, $appRendering.length > 0 ? "found" : "not found");
         if ($appRendering.length > 0 && !hasVisibleChild($appRendering)) {
             let $appEnd = $("#output svg g.systemMilestoneEnd." + appRef.id);
             if ($appRendering.hasClass("systemElementStart") && $appEnd.length > 0 && !isBetweenEmpty($appRendering, $appEnd)) {
@@ -344,7 +336,7 @@ function isBetweenEmpty($start, $end) {
 }
 
 // Updated function to render preview using single toolkit
-function renderPreview(appRef, rdgId, corresp, targetDiv) {
+function renderPreview(appRef, rdgId, corresp, targetDiv, previewXPath) {
     console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
     const appEl = getAppById(appRef.id);
     if (!appEl) {
@@ -356,38 +348,10 @@ function renderPreview(appRef, rdgId, corresp, targetDiv) {
     const currentPage = page;
     
     console.log(`Rendering preview for apparatus ${appRef.id}, reading ${rdgId}`);
-
-    // Preview XPath with/without corresp
-    let previewXPathMap = new Map(appXPathMap);
-    if (corresp) { // Apply the change everywhere there is this correspondence
-        console.log(`Rendering preview with corresp ${corresp}`)
-        previewXPathMap.set(appRef.id, "./*[@corresp='" + corresp + "']");
-
-
-        let $correspApps = $("#output svg .rdg[data-corresp='" + corresp + "']").parent();
-        console.log($correspApps);
-        $correspApps.each(function() {
-            if (this.classList.contains("app")) {
-                let currentAppId = this.getAttribute("data-id");
-                console.log(`Updating preview selection for app: ${currentAppId}`);
-                previewXPathMap.set(currentAppId, "./*[@corresp='" + corresp + "']");
-            } else {
-                console.log(`The parent element of a reading with corresp ${corresp} is not an app: ${this}`)
-            };         
-        });
-    } else { // Apply the change locally
-        console.log(`Rendering preview with reading ${rdgId}`)
-        previewXPathMap.set(appRef.id, "./*[@xml:id='" + rdgId + "']")
-    }
-
-    // Build updated previewXPath array
-    let previewXPathSet = new Set(previewXPathMap.values())
-    // TODO previewXPathSet.delete() // delete the oppiste corresp from here
-    let previewXPath = Array.from(previewXPathSet);
     
     // Configure toolkit for preview
     const previewOptions = {
-        appXPathQuery: previewXPath,
+        appXPathQuery: Array.from(previewXPath),
         xmlIdChecksum: true,
         pageWidth: 600,
         scale: 35, // Slightly larger scale for better visibility of small sections
@@ -397,6 +361,7 @@ function renderPreview(appRef, rdgId, corresp, targetDiv) {
         header: "none",
         breaks: "none"
     };
+    console.log(previewXPath)
     
     try {
         vrvToolkit.setOptions(previewOptions);
@@ -523,20 +488,31 @@ function showApparatusSelection(appRef) {
     
     // Add to body immediately
     $('body').append(loadingHtml);
-    
-    // TODO Clone and append the loading spinner
-    //$(".lds-roller").clone().appendTo(".loading-container");
+
+    // Retrive all possible alternatives involved in this apparatus and remove them from the basicPreviewXPath
+    let basicPreviewXPath = new Set(appXPath);
+    children.forEach((child) => {
+            const childId = child.getAttribute("xml:id");
+            const corresp = child.getAttribute("corresp");
+            basicPreviewXPath.delete("./*[@corresp='" + corresp + "']");
+            basicPreviewXPath.delete("./*[@xml:id='" + childId + "']");
+    });
     
     // Use setTimeout to allow the UI to update, then load content
     setTimeout(() => {
         // Build the actual content
         let selectionHtml = `<div id="reading-options" style="text-align: left;">`;
+
+        let previewXPathMap = new Map()
         
         children.forEach((child) => {
             const childId = child.getAttribute("xml:id");
             const sourceAttr = child.getAttribute("source") || "edition";
             const corresp = child.getAttribute("corresp");
-            console.log(corresp);
+            let previewXPath = new Set(basicPreviewXPath);
+            // Preview XPath with/without corresp 
+            updatePreviewXPath(corresp, previewXPath, childId);
+            previewXPathMap.set(childId, previewXPath);
 
             const sources = sourceAttr.split(" ");
             let versionText = sources
@@ -545,8 +521,9 @@ function showApparatusSelection(appRef) {
                 
             selectionHtml += `
                 <div class="apparatus-selection-option" 
-                     onclick="selectReading('${childId}', '${appRef.id}', '${corresp}')"
-                     data-reading-id="${childId}">
+                    data-app-ref-id="${appRef.id}"
+                    data-preview-xpath="${previewXPath}"
+                    data-reading-id="${childId}">
                     <div style="margin-bottom: 10px;">
                         <strong>${versionText}</strong>
                         <br><small>ID: ${childId}</small>
@@ -557,22 +534,41 @@ function showApparatusSelection(appRef) {
                     </div>
                 </div>
             `;
-            // TODO: take care of corresp to not pass 'null' when it is null. Then change the function.
         });
         
         selectionHtml += `</div>`;
         
         // Replace the loading content with actual content
         $('#apparatus-content').html(selectionHtml);
+
+        // Add event listened for click on apparatus selection option
+        document.querySelectorAll('.apparatus-selection-option').forEach(element => {
+            element.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                console.log("Apparatus option clicked"); // Debug log
+                
+                const childId = this.dataset.readingId;
+                const appRefId = this.dataset.appRefId;
+                const previewXPath = previewXPathMap.get(childId);
+                
+                console.log(`Selecting reading ${childId} for apparatus ${appRefId}`); // Debug log
+                
+                selectReading(childId, appRefId, previewXPath);
+            });
+        });
         
         // Generate previews for each reading
         children.forEach((child) => {
             const childId = child.getAttribute("xml:id");
             const previewDiv = document.getElementById("preview-" + childId);
             const corresp = child.getAttribute("corresp");
+            const previewXPath = previewXPathMap.get(childId)
+            
             if (previewDiv) {
                 try {
-                    renderPreview(appRef, childId, corresp, previewDiv);
+                    renderPreview(appRef, childId, corresp, previewDiv, previewXPath);
                 } catch (error) {
                     console.error("Error rendering preview for " + childId, error);
                     previewDiv.innerHTML = '<span style="color: #999;">Preview unavailable</span>';
@@ -580,6 +576,17 @@ function showApparatusSelection(appRef) {
             }
         });
     }, 5); // Small delay to ensure UI updates
+}
+
+function updatePreviewXPath(corresp, previewXPath, childId) {
+    if (corresp) { // Apply the change everywhere there is this correspondence
+        console.log(`Rendering preview with corresp ${corresp}`);
+        previewXPath.add("./*[@corresp='" + corresp + "']");
+
+    } else { // Apply the change locally
+        console.log(`Rendering preview with reading ${childId}`);
+        previewXPath.add("./*[@xml:id='" + childId + "']");
+    }
 }
 
 // Helper function to highlight selection option
@@ -592,36 +599,14 @@ function highlightSelectionOption(rdgId) {
 }
 
 // New function to select a reading
-function selectReading(rdgId, appId, corresp) {
+function selectReading(rdgId, appId, selectedPreviewXPath) {
     console.log(`Selected reading ${rdgId} for apparatus ${appId}`);
 
     // Store current page before re-rendering
     window.savedPage = page;
 
-    // Update appXPathMap to include the selected reading
-    if (corresp != 'null') { // Apply the change everywhere there is this correspondence
-        console.log(`Reading ${rdgId} for apparatus ${appId} is part of a group with corresp ${corresp}`);
-        let $correspApps = $("#output svg .rdg[data-corresp='" + corresp + "']").parent();
-        console.log($correspApps);
-        $correspApps.each(function() {
-            if (this.classList.contains("app")) {
-                let currentAppId = this.getAttribute("data-id");
-                console.log(`Updating selection for app: ${currentAppId}`);
-                appXPathMap.set(currentAppId, "./*[@corresp='" + corresp + "']");
-            } else {
-                console.log(`The parent element of a reading with corresp ${corresp} is not an app: ${this}`)
-            };         
-        });
-        
-        // TODO Warning on which measures it will affect
-    } else { // Apply the change locally
-        appXPathMap.set(appId, "./*[@xml:id='" + rdgId + "']")
-    }
-
-    // Build updated appXPath array
-    let appXPathSet = new Set(appXPathMap.values())
-    // TODO appXPathSet.delete() // delete the oppiste corresp from here
-    appXPath = Array.from(appXPathSet);
+    // Update appXPath to include the selected reading
+    appXPath = new Set(selectedPreviewXPath);
 
     console.log("Updated appXPath:", appXPath);
 
@@ -629,7 +614,10 @@ function selectReading(rdgId, appId, corresp) {
     closeApparatusSelection();
 
     // Re-render with new selection (this will restore the main toolkit state)
-    showMovement(window.movementId);
+    setTimeout(() => {
+        // Re-render with new selection
+        showMovement(window.movementId);
+    }, 100);
 }
 
 // New function to close apparatus selection
@@ -640,7 +628,7 @@ function closeApparatusSelection() {
     console.log("Apparatus selection modal closed.");
 }
 
-function getMeasureIds() { // TODO: the fucntion is there in the original verovio-view, but not used
+function getMeasureIds() { // TODO: the function is there in the original verovio-view, but not used
     var measureIds = "";
     $("#output svg .measure").each(function(n, measure) { measureIds += measure.id + ","; } );
     return measureIds;
