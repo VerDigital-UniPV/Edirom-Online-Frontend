@@ -50,6 +50,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "EdiromOnline.controller.window.concordanceNavigator.ConcordanceNavigator": [],
   "EdiromOnline.controller.window.iFrameView": [],
   "EdiromOnline.controller.window.search.SearchWindow": [],
+  "EdiromOnline.controller.window.source.AlternativesVerovioView": [],
   "EdiromOnline.controller.window.source.MeasureBasedView": [],
   "EdiromOnline.controller.window.source.PageBasedView": [],
   "EdiromOnline.controller.window.source.SourceView": [],
@@ -87,11 +88,13 @@ Ext.ClassManager.addNameAlternateMappings({
   "EdiromOnline.view.window.audio.AudioView": [],
   "EdiromOnline.view.window.concordanceNavigator.ConcordanceNavigator": [],
   "EdiromOnline.view.window.iFrameView": [],
+  "EdiromOnline.view.window.image.AlternativesVerovioImage": [],
   "EdiromOnline.view.window.image.ImageLoader": [],
   "EdiromOnline.view.window.image.ImageViewer": [],
   "EdiromOnline.view.window.image.OpenSeaDragonViewer": [],
   "EdiromOnline.view.window.image.VerovioImage": [],
   "EdiromOnline.view.window.search.SearchWindow": [],
+  "EdiromOnline.view.window.source.AlternativesVerovioView": [],
   "EdiromOnline.view.window.source.GotoMsg": [],
   "EdiromOnline.view.window.source.HorizontalMeasureViewer": [],
   "EdiromOnline.view.window.source.IntervalSpinner": [],
@@ -505,7 +508,6 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.grid.RowEditor": [],
   "Ext.grid.RowEditorButtons": [],
-  "Ext.grid.Scroller": [],
   "Ext.grid.View": [],
   "Ext.grid.ViewDropZone": [],
   "Ext.grid.column.Action": [
@@ -963,6 +965,7 @@ Ext.ClassManager.addNameAliasMappings({
   "EdiromOnline.controller.window.concordanceNavigator.ConcordanceNavigator": [],
   "EdiromOnline.controller.window.iFrameView": [],
   "EdiromOnline.controller.window.search.SearchWindow": [],
+  "EdiromOnline.controller.window.source.AlternativesVerovioView": [],
   "EdiromOnline.controller.window.source.MeasureBasedView": [],
   "EdiromOnline.controller.window.source.PageBasedView": [],
   "EdiromOnline.controller.window.source.SourceView": [],
@@ -1035,12 +1038,16 @@ Ext.ClassManager.addNameAliasMappings({
   "EdiromOnline.view.window.iFrameView": [
     "widget.iFrameView"
   ],
+  "EdiromOnline.view.window.image.AlternativesVerovioImage": [],
   "EdiromOnline.view.window.image.ImageLoader": [],
   "EdiromOnline.view.window.image.ImageViewer": [],
   "EdiromOnline.view.window.image.OpenSeaDragonViewer": [],
   "EdiromOnline.view.window.image.VerovioImage": [],
   "EdiromOnline.view.window.search.SearchWindow": [
     "widget.searchWindow"
+  ],
+  "EdiromOnline.view.window.source.AlternativesVerovioView": [
+    "widget.alternativesVerovioView"
   ],
   "EdiromOnline.view.window.source.GotoMsg": [],
   "EdiromOnline.view.window.source.HorizontalMeasureViewer": [
@@ -1509,7 +1516,6 @@ Ext.ClassManager.addNameAliasMappings({
   "Ext.grid.RowEditorButtons": [
     "widget.roweditorbuttons"
   ],
-  "Ext.grid.Scroller": [],
   "Ext.grid.View": [
     "widget.gridview"
   ],
