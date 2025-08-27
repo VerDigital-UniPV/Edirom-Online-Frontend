@@ -39,65 +39,226 @@ Ext.define('EdiromOnline.controller.window.pdf.PDFWindow', {
         if(view.initialized) return;
         view.initialized = true;
 
-        // Fetching content of CITATION.cff files and turn into HTML        
-        async function fetchContent(url) {
-            const response = await fetch(url);
-            const citation = await response.text();
-
-            const title = citation.match(/^title: (.*)/m)[1];
-            const abstract = String(citation.match(/^abstract:\s>-\n(\s+.*\n)+/gm)).replace(/^abstract:\s>-\n/, '');
-            const version = citation.match(/^version: (.*)/m)[1];
-            const releaseDate = citation.match(/^date\-released: (.*)/m)[1];
-            const license = citation.match(/^license: (.*)/m)[1];
-            const repoUrl = citation.match(/^repository\-code: (.*)/m)[1];
-            const doi = citation.match(/value: .*?([0-9]+\.[0-9]+\/zenodo\.[0-9]+)/)[1];
-
-            const resultHTML = `                
-                <h1>About ${title}</h1>
-                <section class="teidiv0">
-                    <p>${abstract}</p>
-                    <p>Version: ${version}</p>
-                    <p>Release date: ${releaseDate}</p>
-                    <p>DOI: <a href="https://doi.org/${doi}">${doi}</a></p>
-                    <p>${getLangString('view.window.about.AboutWindow_License')}: ${license}</p>
-                    <p>GitHub: <a href="${repoUrl}">${repoUrl}</a></p>
-                    <p>Contributors: <br/>
-                        <a href="${repoUrl}/graphs/contributors" title="See contributors to ${title} GitHub project">
-                            <img height="50px" id="github-contributors" src="https://contrib.rocks/image?repo=${repoUrl.replace(/^https?:\/\/github.com\//, '')}&max=14&columns=7" alt="Avatars of contributors to ${title} in GitHub" />
-                        </a>
-                    </p>
-                </section>                
-            `;
-
-            return resultHTML;
+        // Function to fetch movements from backend XML
+        async function fetchMovements() {
+            try {
+                const response = await fetch("@backend.url@data/xql/getMovementsAlternatives.xql?uri=" + "xmldb:exist:///db/apps/edirom/adelson_e_salvini_model/content/works/edirom_work_adelson.xml"); //TODO Generalize
+                const xmlText = await response.text();
+                
+                // Parse XML
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                
+                // Extract movements and their versions
+                const movementNodes = xmlDoc.querySelectorAll("work > work");
+                console.log(movementNodes)
+                const movements = [];
+                
+                movementNodes.forEach(function(movementNode) {
+                    const movementId = movementNode.getAttribute('xml:id');
+                    const titleElement = movementNode.querySelector('titleStmt title');
+                    const title = titleElement ? titleElement.textContent : 'Untitled Movement';
+                    
+                    // Extract all versions for this movement
+                    const relationNodes = movementNode.querySelectorAll('relation[rel="hasVersion"]');
+                    const versions = [];
+                    
+                    relationNodes.forEach(function(relationNode) {
+                        const versionId = relationNode.getAttribute('xml:id');
+                        const target = relationNode.getAttribute('target');
+                        const descElement = relationNode.querySelector('desc');
+                        const description = descElement ? descElement.textContent : 'Version';
+                        
+                        versions.push({
+                            id: versionId,
+                            target: target,
+                            description: description
+                        });
+                    });
+                    
+                    movements.push({
+                        id: movementId,
+                        title: title,
+                        versions: versions
+                    });
+                });
+                
+                return movements;
+                
+            } catch (error) {
+                console.error('Error fetching movements:', error);
+                // Return sample data as fallback based on your XML structure
+                return [
+                    {
+                        id: 'work-mv1',
+                        title: 'N.1',
+                        versions: [
+                            { id: 'work-mv1-main', target: 'numero01_merge_vMain.mei', description: 'Main version' },
+                            { id: 'work-mv1-alt', target: 'numero01_merge_vAlt.mei', description: 'Alternative version' }
+                        ]
+                    },
+                    {
+                        id: 'work-mv3',
+                        title: 'N.3',
+                        versions: [
+                            { id: 'work-mv3-main', target: 'numero03_merge.mei', description: 'Version' }
+                        ]
+                    },
+                    {
+                        id: 'work-mv5',
+                        title: 'N.5',
+                        versions: [
+                            { id: 'work-mv5-first', target: 'numero05_merge_vFirst.mei', description: 'First version' },
+                            { id: 'work-mv5-second', target: 'numero05_vBis.mei', description: 'Second version' }
+                        ]
+                    }
+                ];
+            }
         }
 
+        // Function to generate movements selection HTML
+        function generateMovementsHTML(movements) {
+            let movementsHTML = `
+                <div class="tei_body">
+                    <h1>Select Movement Versions</h1>
+                    <section class="teidiv0">
+                        <p>Please select a version for each movement:</p>
+                        <div class="movements-container" style="margin: 20px 0;">
+            `;
 
-        // Fetching content of CITATION.cff files and set result
-        Promise.all([
-            fetchContent('../resources/CITATION.cff'),
-            fetchContent('@backend.url@resources/CITATION.cff')
-        ]).then(function([frontend, backend]) {
+            movements.forEach(function(movement) {
+                movementsHTML += `
+                    <div class="movement-section" style="margin: 25px 0; padding: 20px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa;">
+                        <h2 style="margin: 0 0 15px 0; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 8px;">${movement.title}</h2>
+                        <div class="versions-container" data-movement-id="${movement.id}">
+                `;
+
+                // Add version options for this movement
+                movement.versions.forEach(function(version, index) {
+                    const isFirst = index === 0;
+                    movementsHTML += `
+                        <div class="version-item ${isFirst ? 'selected' : ''}" 
+                             style="margin: 8px 0; padding: 12px; border: 2px solid ${isFirst ? '#2196F3' : '#ccc'}; border-radius: 5px; cursor: pointer; background: ${isFirst ? '#e3f2fd' : '#ffffff'}; display: flex; align-items: center;" 
+                             data-version-id="${version.id}" 
+                             data-target="${version.target}"
+                             onclick="me.selectVersion('${movement.id}', '${version.id}', this)">
+                            <input type="radio" name="movement-${movement.id}" value="${version.id}" ${isFirst ? 'checked' : ''} 
+                                   style="margin-right: 10px;" />
+                            <div>
+                                <strong style="color: #333;">${version.description}</strong>
+                                <br>
+                                <span style="font-size: 0.9em; color: #666;">Target: ${version.target}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                movementsHTML += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            movementsHTML += `
+                        </div>
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button id="movements-action-btn" 
+                                    style="padding: 15px 30px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;"
+                                    onclick="me.handleMovementAction()">
+                                Proceed with Selected Versions
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            `;
+
+            return movementsHTML;
+        }
+
+        // Initialize selections storage and methods
+        view.selectedVersions = {};
+        
+        view.selectVersion = function(movementId, versionId, element) {
+            const container = element.parentElement;
+            
+            // Remove selection from all versions in this movement
+            const versionItems = container.querySelectorAll('.version-item');
+            versionItems.forEach(function(item) {
+                item.classList.remove('selected');
+                item.style.background = '#ffffff';
+                item.style.borderColor = '#ccc';
+                const radio = item.querySelector('input[type="radio"]');
+                if (radio) radio.checked = false;
+            });
+            
+            // Add selection to clicked version
+            element.classList.add('selected');
+            element.style.background = '#e3f2fd';
+            element.style.borderColor = '#2196F3';
+            const radio = element.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+            
+            // Store the selection
+            view.selectedVersions[movementId] = {
+                versionId: versionId,
+                target: element.getAttribute('data-target')
+            };
+            
+            console.log('Selected version for', movementId, ':', versionId);
+            console.log('Current selections:', view.selectedVersions);
+        };
+        
+        view.handleMovementAction = function() {
+            console.log('Final selected versions:', view.selectedVersions);
+            
+            // Validate that all movements have selections
+            const allMovements = Object.keys(view.selectedVersions);
+            if (allMovements.length === 0) {
+                alert('Please select versions for the movements.');
+                return;
+            }
+            
+            // TODO: Add your action logic here
+            // You now have access to view.selectedVersions which contains:
+            // {
+            //   'work-mv1': { versionId: 'work-mv1-main', target: 'numero01_merge_vMain.mei' },
+            //   'work-mv3': { versionId: 'work-mv3-main', target: 'numero03_merge.mei' },
+            //   'work-mv5': { versionId: 'work-mv5-first', target: 'numero05_merge_vFirst.mei' }
+            // }
+            
+            // Example: Process the selected versions
+            // me.processSelectedVersions(view.selectedVersions);
+        };
+
+        // Auto-select first version for each movement when data loads
+        view.initializeDefaultSelections = function(movements) {
+            view.selectedVersions = {};
+            movements.forEach(function(movement) {
+                if (movement.versions.length > 0) {
+                    const firstVersion = movement.versions[0];
+                    view.selectedVersions[movement.id] = {
+                        versionId: firstVersion.id,
+                        target: firstVersion.target
+                    };
+                }
+            });
+        };
+
+        // Fetch movements and display them
+        fetchMovements().then(function(movements) {
+            view.initializeDefaultSelections(movements);
+            const movementsHTML = generateMovementsHTML(movements);
+            view.setResult(movementsHTML);
+        }).catch(function(error) {
+            console.error('Error displaying movements:', error);
             view.setResult(`
                 <div class="tei_body">
-                    <h1>About Edirom-Online</h1>
+                    <h1>Error</h1>
                     <section class="teidiv0">
-                        <p>
-                            Edirom-Online is a web-based platform for the collaborative editing of complex scholarly digital editions. 
-                            It is based on the TEI XML standard and provides a rich set of tools for the collaborative editing of texts, images, and other media. 
-                            Edirom-Online is developed by the Edirom Project.
-                        </p>
-                        <p>
-                            The software consists of two main modules: the frontend and the backend.
-                            Information about the parts of the software can be found below.
-                        </p>
+                        <p>Unable to load movements. Please try again later.</p>
                     </section>
-                    ${frontend}
-                    ${backend}
-                </div>`);
+                </div>
+            `);
         });
-
-
-
     }
 });
