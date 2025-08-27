@@ -71,6 +71,13 @@ Ext.define('EdiromOnline.view.desktop.TopBar', {
         
         me.searchButton.textField = me.searchTextField;
 
+        me.pdfButton = Ext.create('Ext.button.Button', {
+            id: 'pdfBtn',
+            text: 'Create PDF',
+            cls: 'taskLinkButton about',
+            action: 'openPDFWindow'
+        });
+
         me.items = [
             new Ext.toolbar.Toolbar({
                 flex: 1,
@@ -90,7 +97,8 @@ Ext.define('EdiromOnline.view.desktop.TopBar', {
                         '->',
                         me.searchTextField,
                         me.searchButton,
-                        me.aboutButton
+                        me.aboutButton,
+                        me.pdfButton
                 ]
             })
         ];

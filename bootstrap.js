@@ -49,6 +49,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "EdiromOnline.controller.window.audio.AudioView": [],
   "EdiromOnline.controller.window.concordanceNavigator.ConcordanceNavigator": [],
   "EdiromOnline.controller.window.iFrameView": [],
+  "EdiromOnline.controller.window.pdf.PDFWindow": [],
   "EdiromOnline.controller.window.search.SearchWindow": [],
   "EdiromOnline.controller.window.source.AlternativesVerovioView": [],
   "EdiromOnline.controller.window.source.MeasureBasedView": [],
@@ -93,6 +94,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "EdiromOnline.view.window.image.ImageViewer": [],
   "EdiromOnline.view.window.image.OpenSeaDragonViewer": [],
   "EdiromOnline.view.window.image.VerovioImage": [],
+  "EdiromOnline.view.window.pdf.PDFWindow": [],
   "EdiromOnline.view.window.search.SearchWindow": [],
   "EdiromOnline.view.window.source.AlternativesVerovioView": [],
   "EdiromOnline.view.window.source.GotoMsg": [],
@@ -964,6 +966,7 @@ Ext.ClassManager.addNameAliasMappings({
   "EdiromOnline.controller.window.audio.AudioView": [],
   "EdiromOnline.controller.window.concordanceNavigator.ConcordanceNavigator": [],
   "EdiromOnline.controller.window.iFrameView": [],
+  "EdiromOnline.controller.window.pdf.PDFWindow": [],
   "EdiromOnline.controller.window.search.SearchWindow": [],
   "EdiromOnline.controller.window.source.AlternativesVerovioView": [],
   "EdiromOnline.controller.window.source.MeasureBasedView": [],
@@ -1043,6 +1046,9 @@ Ext.ClassManager.addNameAliasMappings({
   "EdiromOnline.view.window.image.ImageViewer": [],
   "EdiromOnline.view.window.image.OpenSeaDragonViewer": [],
   "EdiromOnline.view.window.image.VerovioImage": [],
+  "EdiromOnline.view.window.pdf.PDFWindow": [
+    "widget.PDFWindow"
+  ],
   "EdiromOnline.view.window.search.SearchWindow": [
     "widget.searchWindow"
   ],

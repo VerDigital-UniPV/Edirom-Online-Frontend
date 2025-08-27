@@ -228,6 +228,29 @@ Ext.define('EdiromOnline.view.desktop.Desktop', {
     
     },
 
+    openPDFWindow: function() {
+
+        var me = this;
+        var win = null;
+
+        me.getActiveWindowsSet().each(function(window) {
+            if(Ext.getClassName(window) == 'EdiromOnline.view.window.pdf.PDFWindow')
+                win = window;
+        });
+
+        if(win == null) {
+            win = Ext.create('EdiromOnline.view.window.pdf.PDFWindow', me.getSizeAndPosition(700, 600));
+            me.addWindow(win);
+            win.show();
+
+        }else if(win != me.getActiveWindow())
+            win.show();
+
+        else
+            win.hide();
+    
+    },
+
     getSizeAndPosition: function(maxWidth, maxHeight) {
 
         var me = this;
