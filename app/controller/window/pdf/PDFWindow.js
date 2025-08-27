@@ -141,7 +141,7 @@ Ext.define('EdiromOnline.controller.window.pdf.PDFWindow', {
                              style="margin: 8px 0; padding: 12px; border: 2px solid ${isFirst ? '#2196F3' : '#ccc'}; border-radius: 5px; cursor: pointer; background: ${isFirst ? '#e3f2fd' : '#ffffff'}; display: flex; align-items: center;" 
                              data-version-id="${version.id}" 
                              data-target="${version.target}"
-                             onclick="me.selectVersion('${movement.id}', '${version.id}', this)">
+                             onclick="window.selectVersion('${movement.id}', '${version.id}', this)">
                             <input type="radio" name="movement-${movement.id}" value="${version.id}" ${isFirst ? 'checked' : ''} 
                                    style="margin-right: 10px;" />
                             <div>
@@ -164,7 +164,7 @@ Ext.define('EdiromOnline.controller.window.pdf.PDFWindow', {
                         <div style="text-align: center; margin-top: 30px;">
                             <button id="movements-action-btn" 
                                     style="padding: 15px 30px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;"
-                                    onclick="me.handleMovementAction()">
+                                    onclick="window.handleMovementAction()">
                                 Proceed with Selected Versions
                             </button>
                         </div>
@@ -178,7 +178,8 @@ Ext.define('EdiromOnline.controller.window.pdf.PDFWindow', {
         // Initialize selections storage and methods
         view.selectedVersions = {};
         
-        view.selectVersion = function(movementId, versionId, element) {
+        // Make functions globally available for HTML onclick handlers
+        window.selectVersion = function(movementId, versionId, element) {
             const container = element.parentElement;
             
             // Remove selection from all versions in this movement
@@ -208,7 +209,7 @@ Ext.define('EdiromOnline.controller.window.pdf.PDFWindow', {
             console.log('Current selections:', view.selectedVersions);
         };
         
-        view.handleMovementAction = function() {
+        window.handleMovementAction = function() {
             console.log('Final selected versions:', view.selectedVersions);
             
             // Validate that all movements have selections
