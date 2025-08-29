@@ -219,17 +219,146 @@ Ext.define('EdiromOnline.controller.window.pdf.PDFWindow', {
                 return;
             }
             
-            // TODO: Add your action logic here
+            // Process the selected versions
+            window.processSelectedVersions(view.selectedVersions);
+        };
+
+        window.processSelectedVersions = async function(selectedVersions) {
             // You now have access to view.selectedVersions which contains:
             // {
             //   'work-mv1': { versionId: 'work-mv1-main', target: 'numero01_merge_vMain.mei' },
             //   'work-mv3': { versionId: 'work-mv3-main', target: 'numero03_merge.mei' },
             //   'work-mv5': { versionId: 'work-mv5-first', target: 'numero05_merge_vFirst.mei' }
             // }
-            
-            // Example: Process the selected versions
-            // me.processSelectedVersions(view.selectedVersions);
+            var selectedFiles = [];
+            for (var key in selectedVersions) {
+                if (selectedVersions.hasOwnProperty(key)) {
+                    var movement = selectedVersions[key];
+                    console.log(movement.target);
+                    const mei = await fetch("@backend.url@data/xql/getMusicInMdiv.xql?uri=" + movement.target);
+                    selectedFiles.push(mei)
+                }
+            }
+            processFiles();
         };
+
+        async function processFiles() {
+            if (!vrvToolkit) {
+                updateStatus("⚠️ Verovio is not ready yet.");
+                return;
+            }
+            if (selectedFiles.length === 0) {
+                updateStatus('Please select MEI files first.');
+                return;
+            }
+
+            const processButton = document.getElementById('processButton');
+            const progressBar = document.getElementById('progressBar');
+            const scoresContainer = document.getElementById('scoresContainer');
+            const printButton = document.getElementById('printButton');
+            const instructions = document.getElementById('instructions');
+
+            processButton.disabled = true;
+            showLoadingBar(true);
+            scoresContainer.innerHTML = '';
+            printButton.style.display = 'none';
+            instructions.style.display = 'none';
+
+            try {
+                updateStatus('Processing MEI files...');
+
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    const file = selectedFiles[i];
+                    const progress = ((i + 1) / selectedFiles.length) * 100;
+                    progressBar.style.width = progress + '%';
+                    updateStatus(`Processing ${file.name} (${i + 1}/${selectedFiles.length})`);
+
+                    const meiData = await readFileAsText(file);
+
+                    try {
+                        // Set options before loading
+                        vrvToolkit.setOptions({
+                            pageWidth: 2100,
+                            pageHeight: 2970,
+                            scale: 40,
+                            adjustPageHeight: true,
+                            breaks: "auto",
+                            footer: "none",
+                            header: "none"
+                        });
+
+                        vrvToolkit.loadData(meiData);
+                        const pageCount = vrvToolkit.getPageCount();
+
+                        const scoreSection = document.createElement('div');
+                        scoreSection.className = 'score-section';
+
+                        const titleDiv = document.createElement('div');
+                        titleDiv.className = 'score-title';
+                        titleDiv.textContent = `${file.name} (${pageCount} pages)`;
+                        scoreSection.appendChild(titleDiv);
+
+                        for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+                            const svg = vrvToolkit.renderToSVG(pageNum, {});
+                            if (svg && svg.trim() !== "") {
+                                const pageDiv = document.createElement('div');
+                                pageDiv.className = 'score-page';
+                                pageDiv.innerHTML = svg;
+                                scoreSection.appendChild(pageDiv);
+                            }
+                        }
+
+                        scoresContainer.appendChild(scoreSection);
+
+                    } catch (err) {
+                        console.error(`Error processing ${file.name}:`, err);
+                        updateStatus(`Error processing ${file.name}: ${err.message}`);
+                    }
+                }
+
+                updateStatus(`✅ Successfully processed ${selectedFiles.length} files! Ready to print.`);
+                progressBar.style.width = '100%';
+                printButton.style.display = 'block';
+                instructions.style.display = 'block';
+
+            } catch (err) {
+                console.error('Error processing files:', err);
+                updateStatus(`❌ Error processing files: ${err.message}`);
+            } finally {
+                processButton.disabled = false;
+                setTimeout(() => showLoadingBar(false), 1500);
+            }
+        }
+
+        function openPrintDialog() {
+            window.scrollTo(0, 0);
+            setTimeout(() => window.print(), 100);
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function showLoadingBar(show) {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            if (show) {
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '10%'; // small kick-off so it's visible
+            } else {
+                progressBar.style.width = '0%';
+                progressContainer.style.display = 'none';
+            }
+        }
 
         // Auto-select first version for each movement when data loads
         view.initializeDefaultSelections = function(movements) {
