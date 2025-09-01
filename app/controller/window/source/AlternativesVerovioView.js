@@ -60,10 +60,40 @@ Ext.define('EdiromOnline.controller.window.source.AlternativesVerovioView', {
 				me.movementsLoaded(movements, view);
             }, this)
         );
+
+		window.doAJAXRequest('data/xql/getAlternativesPreferences.xql',
+            'GET', 
+            {
+                target: view.uri
+            },
+            Ext.bind(function(response){
+                var xml   = response.responseXML || new DOMParser().parseFromString(response.responseText, 'text/xml');
+				var prefs = Ext.DomQuery.select('preference', xml); // array
+				var data  = [];
+
+				Ext.Array.forEach(prefs, function (pref) {
+					data.push({
+						name:  Ext.DomQuery.selectValue('name',  pref, ''),
+						query: Ext.DomQuery.selectValue('query', pref, '')
+					});
+				});
+
+				var preferences = Ext.create('Ext.data.Store', {
+					fields: ['name', 'query'],
+					data
+				});
+				
+				me.preferencesLoaded(preferences, view);
+            }, this)
+        );
 	},
 
 	movementsLoaded: function (movements, view) {
 		view.setMovements(movements);
+	},
+
+	preferencesLoaded: function (preferences, view) {
+		view.setPreferences(preferences);
 	},
 
 	onGotoMeasureByName: function (view, measure, movementId) {
