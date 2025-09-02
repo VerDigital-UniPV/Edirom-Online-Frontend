@@ -94,7 +94,7 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
 
         me.savePreferencesButton = Ext.create('Ext.button.Button', {
             id: me.id + '_newAlternativesPreference',
-            text: 'Save customized version',
+            text: 'Save custom version',
             indent: false,
             cls: 'menuButton',
             handler: Ext.bind(me.saveAlternativesPreferenceDialog, me)
@@ -155,6 +155,20 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
         // add gotoMovement entry to goto menu
         me.alternativesPreferencesMenu.menu.add(preferencesItems);
     }, 
+
+    updatePreferences: function (name, query) {
+        var me = this;
+
+        var newPreferencesItems = [];
+
+        newPreferencesItems.push({
+            text: name,
+            handler: Ext.bind(me.setAlternativePreferences, me, query, true)
+        });
+
+        me.alternativesPreferencesMenu.menu.add(newPreferencesItems);
+
+    },
     
     showMovement: function (menuItem, event, movementId) {
         var me = this;
@@ -180,11 +194,10 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
 
     saveAlternativesPreferenceDialog: function () {
         var me = this;
-        
         Ext.create('EdiromOnline.view.window.source.SaveAlternativesPreference', {
-            movements: me.movements,
-            callback: Ext.bind(function (measure, movementId) {
-                this.fireEvent('gotoMeasureByName', this, measure, movementId);
+            callback: Ext.bind(function (name) {
+                console.log("We are in callback")
+                this.fireEvent('savePreference', this, name, 'prova query'); // TODO load query
             },
             me)
         }).show();
@@ -233,23 +246,24 @@ Ext.define('EdiromOnline.view.window.source.SaveAlternativesPreference', {
 
         Ext.apply(me, me.config);
 
-        me.title = 'Save this selection'; //getLangString('view.window.source.SourceView_GotoMsg_Title');
+        me.title = 'Save this custom version'; //getLangString('view.window.source.SourceView_GotoMsg_Title');
 
         me.field = Ext.create('Ext.form.field.Text', {
             name: 'name',
-            fieldLabel: 'Preference Name', //getLangString('view.window.source.SourceView_GotoMsg_Measure'),
+            fieldLabel: 'Version Name', //getLangString('view.window.source.SourceView_GotoMsg_Measure'),
             allowBlank: false
         });
-
-        me.aboutButton = Ext.create('Ext.button.Button', {
+        
+        me.savePreferenceButton = Ext.create('Ext.button.Button', {
             id: 'savePreferenceBtn',
             cls: 'saveButton',
             text: 'Save', //getLangString('view.desktop.TaskBar_about'),
-            action: 'openAboutWindow' // TODO: like me.gotoFn
+            handler: me.saveFn,
+            scope: me
         });
 
         me.items = [
-            me.field, me.aboutButton,
+            me.field, me.savePreferenceButton,
             {
                 xtype: 'panel',
                 layout: 'hbox',
@@ -262,7 +276,7 @@ Ext.define('EdiromOnline.view.window.source.SaveAlternativesPreference', {
                     },
                     {
                         text: getLangString('global_execute'),
-                        handler: me.gotoFn,
+                        handler: me.saveFn,
                         scope: me
                     }
                 ]
@@ -280,7 +294,7 @@ Ext.define('EdiromOnline.view.window.source.SaveAlternativesPreference', {
 
         map.addBinding({
             key: Ext.EventObject.ENTER,
-            fn: me.gotoFn,
+            fn: me.saveFn,
             scope: me
         });
 
@@ -293,11 +307,12 @@ Ext.define('EdiromOnline.view.window.source.SaveAlternativesPreference', {
         map.enable();
     },
 
-    gotoFn: function(button, event) {
+    saveFn: function(button, event) {
         var me = this;
+        console.log("We are in saveFn")
 
         //TODO: Validierung
-        me.callback(Ext.String.trim(me.field.getValue()));
+        me.callback(me.field.getValue());
         me.close();
     }
 });

@@ -43,6 +43,7 @@ Ext.define('EdiromOnline.controller.window.source.AlternativesVerovioView', {
 
 		view.on('gotoMeasureByName', me.onGotoMeasureByName, me);
 		view.on('gotoMeasure', me.onGotoMeasure, me);
+		view.on('savePreference', me.onSavePreference, me);
 		
 		window.doAJAXRequest('data/xql/getMovements.xql',
             'GET', 
@@ -140,6 +141,30 @@ Ext.define('EdiromOnline.controller.window.source.AlternativesVerovioView', {
 		if (measureId != '' && movementId != '') {
 			view.showMeasure(movementId, measureId, measureCount);
 		}
+	},
+
+	onSavePreference: function (view, name, query) {
+		var me = this;
+
+		console.log('Saving preference')
+		console.log(name)
+		console.log(query)
+		
+		window.doAJAXRequest('data/xql/addAlternativesPreferences.xql',
+            'GET', 
+            {
+                target: view.uri,
+				name: name,
+				query: query
+            },
+            Ext.bind(function(response){
+				console.log("Processing response");
+                console.log(response);
+				console.log(name);
+				console.log(query);
+				view.updatePreferences(name, query);
+            }, me)
+        );
 	},
 	
 	pagesLoaded: function (text, view) {
