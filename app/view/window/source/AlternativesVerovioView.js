@@ -175,8 +175,18 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
         me.verovioImageView.showMovement(movementId);
     },
 
-    setAlternativePreferences: function (menuItem, event, query) {
+    setAlternativePreferences: function (menuItem, event, queryStr) {
         var me = this;
+
+        console.log(menuItem);
+        console.log(event);
+        console.log(queryStr)
+        
+        query = new Set(queryStr.split(","));
+
+        console.log(query)
+
+        me.verovioImageView.showSelection(query);
         // TODO
     },
     
