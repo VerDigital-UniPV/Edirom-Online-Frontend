@@ -194,10 +194,14 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
 
     saveAlternativesPreferenceDialog: function () {
         var me = this;
+
+        querySet = me.verovioImageView.getAppXPath();
+        query = [...querySet].join(",");
+
         Ext.create('EdiromOnline.view.window.source.SaveAlternativesPreference', {
             callback: Ext.bind(function (name) {
                 console.log("We are in callback")
-                this.fireEvent('savePreference', this, name, 'prova query'); // TODO load query
+                this.fireEvent('savePreference', this, name, query);
             },
             me)
         }).show();

@@ -124,5 +124,18 @@ Ext.define('EdiromOnline.view.window.image.AlternativesVerovioImage', {
 	    var me = this;
 	    var iframe = Ext.fly(me.id + '_rendContIFrame').dom.contentWindow;
 	    iframe.showMeasure(movementId, measureId);
+	},
+
+	getAppXPath: function () {
+		var me = this;
+		var iframeWin = Ext.fly(me.id + '_rendContIFrame').dom.contentWindow;
+
+		if (iframeWin && iframeWin.appXPath) {
+			console.log("XPath from iframe:", iframeWin.appXPath);
+			return iframeWin.appXPath;
+		} else {
+			console.warn("appXPath not ready yet");
+			return null;
+		}
 	}
 });
