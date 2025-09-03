@@ -24,7 +24,7 @@ function showMovement(movementId) {
 	    'header': 'none',
 	    'svgBoundingBoxes': true,
 	    'svgHtml5': true,
-        'breaks' : 'line' // Added for the studi
+        //'breaks' : 'line' // Added for the studi
     };
 
     /* Load the file using HTTP GET */
