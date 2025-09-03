@@ -56,7 +56,7 @@ function showMovement(movementId) {
         svgHtml5: true,
         xmlIdChecksum: false,
         removeIds: false,
-        breaks: "line", // Added for the studi
+        //breaks: "line", // Added for the studi
         appXPathQuery: Array.from(appXPath),
         svgAdditionalAttribute: [
             "lem@source",
