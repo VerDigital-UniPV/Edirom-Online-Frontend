@@ -39,7 +39,10 @@ Ext.define('EdiromOnline.controller.desktop.Desktop', {
             },
             'topbar #searchTextFieldTop': {
                 specialkey: this.onSpecialKey
-            }
+            },
+            'topbar button[action=openPDFWindow]': {
+                click: this.onOpenPDFWindow
+            },
         });
     },
 
@@ -100,6 +103,11 @@ Ext.define('EdiromOnline.controller.desktop.Desktop', {
     onOpenAboutWindow: function(button, event, args) {
         var me = this;
         me.desktop.openAboutWindow();
+    },
+
+    onOpenPDFWindow: function(button, event, args) {
+        var me = this;
+        me.desktop.openPDFWindow();
     },
 
     switchDesktop: function(desk) {
