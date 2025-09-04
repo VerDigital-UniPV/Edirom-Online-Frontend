@@ -81,7 +81,4 @@ Ext.define('EdiromOnline.view.window.pdf.PDFWindow', {
 		cont.dom.contentWindow.document.close();
     },
 
-    close: function() {
-        this.hide();
-    }
 });
