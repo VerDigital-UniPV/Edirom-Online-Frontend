@@ -96,6 +96,7 @@ function restoreMainToolkitState() {
         return;
     }
     
+    vrvToolkit.resetOptions();
     vrvToolkit.setOptions(mainToolkitState.options);
     vrvToolkit.loadData(mainToolkitState.data);
     mainToolkitState.pageCount = vrvToolkit.getPageCount();
