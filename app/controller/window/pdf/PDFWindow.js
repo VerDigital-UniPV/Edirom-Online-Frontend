@@ -76,8 +76,6 @@ Ext.define('EdiromOnline.controller.window.pdf.PDFWindow', {
                             </div>
                         </div>
                         
-                        <div id="status" class="status" style="display: none;"></div>
-                        
                         <div id="progressContainer" class="progress-container">
                             <div id="progressBar" class="progress-bar"></div>
                         </div>

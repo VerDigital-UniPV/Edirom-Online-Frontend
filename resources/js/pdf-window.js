@@ -415,11 +415,11 @@ async function processSelectedVersions(selectedVersions, selectedPreferences) {
 // Process files with Verovio
 async function processFiles() {
     if (!vrvToolkit) {
-        updateStatus("⚠️ Verovio is not ready yet.");
+        console.log("⚠️ Verovio is not ready yet.");
         return;
     }
     if (selectedFiles.length === 0) {
-        updateStatus('Please select MEI files first.');
+        console.log('Please select MEI files first.');
         return;
     }
 
@@ -433,13 +433,13 @@ async function processFiles() {
     printButton.style.display = 'none';
 
     try {
-        updateStatus('Processing MEI files...');
+        console.log('Processing MEI files...');
 
         for (let i = 0; i < selectedFiles.length; i++) {
             const file = selectedFiles[i];
             const progress = ((i + 1) / selectedFiles.length) * 100;
             progressBar.style.width = progress + '%';
-            updateStatus(`Processing ${file.name} with preference: ${file.preferenceQuery} (${i + 1}/${selectedFiles.length})`);
+            console.log(`Processing ${file.name} with preference: ${file.preferenceQuery} (${i + 1}/${selectedFiles.length})`);
             const appXPath = new Set(file.preferenceQuery.split(","));
 
             try {
@@ -475,17 +475,17 @@ async function processFiles() {
 
             } catch (err) {
                 console.error(`Error processing ${file.name}:`, err);
-                updateStatus(`Error processing ${file.name}: ${err.message}`);
+                console.log(`Error processing ${file.name}: ${err.message}`);
             }
         }
 
-        updateStatus(`✅ Successfully processed ${selectedFiles.length} files! Ready to print.`);
+        console.log(`✅ Successfully processed ${selectedFiles.length} files! Ready to print.`);
         progressBar.style.width = '100%';
         printButton.style.display = 'inline-block';
 
     } catch (err) {
         console.error('Error processing files:', err);
-        updateStatus(`❌ Error processing files: ${err.message}`);
+        console.log(`❌ Error processing files: ${err.message}`);
     } finally {
         document.body.classList.remove('loading');
         setTimeout(() => showLoadingBar(false), 1500);
@@ -496,20 +496,6 @@ async function processFiles() {
 function openPrintDialog() {
     window.scrollTo(0, 0);
     setTimeout(() => window.print(), 100);
-}
-
-// Update status
-function updateStatus(message) {
-    const statusEl = document.getElementById('status');
-    statusEl.textContent = message;
-    statusEl.style.display = 'block';
-    
-    // Auto-hide status after 5 seconds for success messages
-    if (message.includes('✅')) {
-        setTimeout(() => {
-            statusEl.style.display = 'none';
-        }, 5000);
-    }
 }
 
 // Show/hide loading bar
