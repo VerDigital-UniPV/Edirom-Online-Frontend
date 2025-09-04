@@ -65,7 +65,8 @@ Ext.define('EdiromOnline.view.window.pdf.PDFWindow', {
             {
                 xtype: 'panel',
                 flex: 1,
-                html: '<div id="' + this.id + '_textCont" class="textViewContent"></div>'
+                html: `<div id="${me.id}_rendCont" class="renderingViewContent">
+		            <iframe id="${me.id}_rendContIFrame"></iframe></div>`
             }
             
         ];
@@ -74,8 +75,10 @@ Ext.define('EdiromOnline.view.window.pdf.PDFWindow', {
     },
     
     setResult: function(text) {
-        Ext.fly(this.id + '_textCont').update(text);
-        this.fireEvent('documentLoaded', this);
+        var cont = this.el.getById(this.id + '_rendContIFrame');
+        cont.dom.contentWindow.document.open();
+		cont.dom.contentWindow.document.write(text);
+		cont.dom.contentWindow.document.close();
     },
 
     close: function() {
