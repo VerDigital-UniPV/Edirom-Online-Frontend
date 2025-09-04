@@ -29,6 +29,7 @@ async function init() {
         initializeDefaultSelections(movements);
         const movementsHTML = generateMovementsHTML(movements);
         document.getElementById('content').innerHTML = movementsHTML;
+        attachPreferenceHandlers(document);
     } catch (error) {
         console.error('Error initializing:', error);
         document.getElementById('content').innerHTML = `
@@ -225,6 +226,21 @@ function generateMovementsHTML(movements) {
     return movementsHTML;
 }
 
+// Attach JS event listeners
+function attachPreferenceHandlers(container) {
+    container.querySelectorAll(".preference-item").forEach(div => {
+        div.addEventListener("click", function() {
+            selectPreference(
+                div.dataset.movementId,
+                div.dataset.versionId,
+                div.dataset.preferenceName,
+                div.dataset.preferenceQuery,
+                div
+            );
+        });
+    });
+}
+
 // Generate preferences submenu HTML
 function generatePreferencesSubmenu(movementId, versionId, target, isVisible) {
     const preferences = preferencesData[target] || [];
@@ -239,11 +255,13 @@ function generatePreferencesSubmenu(movementId, versionId, target, isVisible) {
     
     preferences.forEach(function(preference, index) {
         const isLast = index === preferences.length - 1;
+
         submenuHTML += `
             <div class="preference-item ${isLast ? 'selected' : ''}" 
                  data-preference-name="${preference.name}"
                  data-preference-query="${preference.query}"
-                 onclick="selectPreference('${movementId}', '${versionId}', '${preference.name}', "${preference.query}", this)">
+                 data-movement-id="${movementId}"
+                 data-version-id="${versionId}">
                 <input type="radio" name="preference-${movementId}-${versionId}" 
                        value="${preference.name}" ${isLast ? 'checked' : ''} />
                 <label>${preference.name}</label>
@@ -257,8 +275,8 @@ function generatePreferencesSubmenu(movementId, versionId, target, isVisible) {
 
 // Auto-select first version and preference for each movement when data loads
 function initializeDefaultSelections(movements) {
-    selectedVersions = {};
-    selectedPreferences = {};
+    //selectedVersions = {};
+    //selectedPreferences = {};
     
     movements.forEach(function(movement) {
         if (movement.versions.length > 0) {
@@ -440,7 +458,13 @@ async function processFiles() {
             const progress = ((i + 1) / selectedFiles.length) * 100;
             progressBar.style.width = progress + '%';
             console.log(`Processing ${file.name} with preference: ${file.preferenceQuery} (${i + 1}/${selectedFiles.length})`);
-            const appXPath = new Set(file.preferenceQuery.split(","));
+            var appXPath
+            if (file.preferenceQuery.length > 0) {
+                appXPath = new Set(file.preferenceQuery.split(","));
+            } else {
+                appXPath = new Set();
+            }
+            console.log(appXPath)
 
             try {
                 // Set options before loading
@@ -476,6 +500,8 @@ async function processFiles() {
             } catch (err) {
                 console.error(`Error processing ${file.name}:`, err);
                 console.log(`Error processing ${file.name}: ${err.message}`);
+                console.log(Array.from(appXPath));
+                console.log(file);
             }
         }
 
