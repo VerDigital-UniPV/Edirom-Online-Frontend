@@ -182,7 +182,11 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
         console.log(event);
         console.log(queryStr)
         
-        query = new Set(queryStr.split(","));
+        if (queryStr.length > 0) {
+            query = new Set(queryStr.split(","));
+        } else {
+            query = new Set();
+        }
 
         console.log(query)
 
