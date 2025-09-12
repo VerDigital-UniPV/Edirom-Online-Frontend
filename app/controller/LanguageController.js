@@ -63,7 +63,7 @@ Ext.define('EdiromOnline.controller.LanguageController', {
         if(!string) {
             Ext.Error.raise({
                 msg: 'No language string found with this key',
-                key: key,
+                key: key,   
                 lang: lang,
                 level: 'warn' //warn, error, fatal
             });
