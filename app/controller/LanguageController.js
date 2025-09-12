@@ -68,7 +68,7 @@ Ext.define('EdiromOnline.controller.LanguageController', {
                 level: 'warn' //warn, error, fatal
             });
 
-            return null;
+            return key;
         }
 
         return string.replace(Ext.String.formatRe, function(m, i) {
