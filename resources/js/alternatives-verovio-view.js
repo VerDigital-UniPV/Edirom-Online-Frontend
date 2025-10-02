@@ -46,7 +46,7 @@ function showMovement(movementId) {
     const initWidth = Math.floor($(document).width() * 100.0 / 33.0);
 
     const options = {
-        scale: 33,
+        scale: 25,
         pageHeight: initHeight,
         pageWidth: initWidth,
         adjustPageHeight: 1,

@@ -17,14 +17,15 @@ function showMovement(movementId) {
     var initWidth = Math.floor($(document).width() * 100.0 / 33.0);
 
     var options = {
-        'scale': 33,
+        'scale': 25,
+        //'scaleToPageSize': true,
 	    'pageHeight': initHeight,
 	    'pageWidth': initWidth,
 	    'adjustPageHeight': 1,
 	    'header': 'none',
 	    'svgBoundingBoxes': true,
 	    'svgHtml5': true,
-        //'breaks' : 'line' // Added for the studi
+        // 'breaks' : 'smart' //'breaks' : 'line' // Added for the studi
     };
 
     /* Load the file using HTTP GET */
