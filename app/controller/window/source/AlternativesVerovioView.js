@@ -43,6 +43,7 @@ Ext.define('EdiromOnline.controller.window.source.AlternativesVerovioView', {
 
 		view.on('gotoMeasureByName', me.onGotoMeasureByName, me);
 		view.on('gotoMeasure', me.onGotoMeasure, me);
+		view.on('savePreference', me.onSavePreference, me);
 		
 		window.doAJAXRequest('data/xql/getMovements.xql',
             'GET', 
@@ -60,10 +61,40 @@ Ext.define('EdiromOnline.controller.window.source.AlternativesVerovioView', {
 				me.movementsLoaded(movements, view);
             }, this)
         );
+
+		window.doAJAXRequest('data/xql/getAlternativesPreferences.xql',
+            'GET', 
+            {
+                target: view.uri
+            },
+            Ext.bind(function(response){
+                var xml   = response.responseXML || new DOMParser().parseFromString(response.responseText, 'text/xml');
+				var prefs = Ext.DomQuery.select('preference', xml); // array
+				var data  = [];
+
+				Ext.Array.forEach(prefs, function (pref) {
+					data.push({
+						name:  Ext.DomQuery.selectValue('name',  pref, ''),
+						query: Ext.DomQuery.selectValue('query', pref, '')
+					});
+				});
+
+				var preferences = Ext.create('Ext.data.Store', {
+					fields: ['name', 'query'],
+					data
+				});
+				
+				me.preferencesLoaded(preferences, view);
+            }, this)
+        );
 	},
 
 	movementsLoaded: function (movements, view) {
 		view.setMovements(movements);
+	},
+
+	preferencesLoaded: function (preferences, view) {
+		view.setPreferences(preferences);
 	},
 
 	onGotoMeasureByName: function (view, measure, movementId) {
@@ -110,6 +141,30 @@ Ext.define('EdiromOnline.controller.window.source.AlternativesVerovioView', {
 		if (measureId != '' && movementId != '') {
 			view.showMeasure(movementId, measureId, measureCount);
 		}
+	},
+
+	onSavePreference: function (view, name, query) {
+		var me = this;
+
+		console.log('Saving preference')
+		console.log(name)
+		console.log(query)
+		
+		window.doAJAXRequest('data/xql/addAlternativesPreferences.xql',
+            'GET', 
+            {
+                target: view.uri,
+				name: name,
+				query: query
+            },
+            Ext.bind(function(response){
+				console.log("Processing response");
+                console.log(response);
+				console.log(name);
+				console.log(query);
+				view.updatePreferences(name, query);
+            }, me)
+        );
 	},
 	
 	pagesLoaded: function (text, view) {

@@ -1,7 +1,7 @@
 window.vrvToolkit = new verovio.toolkit();
 
 // === BYO State and Tools === //
-let appXPath = new Set();
+var appXPath = new Set();
 let meiString = "";
 const parser = new DOMParser();
 let meiDOM;

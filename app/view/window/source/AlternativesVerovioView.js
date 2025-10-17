@@ -81,6 +81,25 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
             }
         });
         me.window.getTopbar().addViewSpecificItem(me.gotoMenu, me.id);
+
+        me.alternativesPreferencesMenu = Ext.create('Ext.button.Button', {
+            text: 'Load custom version',
+            indent: false,
+            cls: 'menuButton',
+            menu: {
+                items:[]
+            }
+        });
+        me.window.getTopbar().addViewSpecificItem(me.alternativesPreferencesMenu, me.id);
+
+        me.savePreferencesButton = Ext.create('Ext.button.Button', {
+            id: me.id + '_newAlternativesPreference',
+            text: 'Save custom version',
+            indent: false,
+            cls: 'menuButton',
+            handler: Ext.bind(me.saveAlternativesPreferenceDialog, me)
+        });
+        me.window.getTopbar().addViewSpecificItem(me.savePreferencesButton, me.id);
     },
     
     setMovements: function (movements) {
@@ -113,12 +132,66 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
             menu: {
                 items: movementItems
             }
+        });      
+    },
+
+    setPreferences: function (preferences) {
+        var me = this;
+
+        // set me.preferences to submitted JSON array
+        me.preferences = preferences;
+
+        // initialize preferencesItems variable
+        var preferencesItems = [];
+
+        // iterate over submitted preferences and push them to preferencesItems variable
+        preferences.each(function (preference) {
+            preferencesItems.push({
+                text: preference.get('name'),
+                handler: Ext.bind(me.setAlternativePreferences, me, preference.get('query'), true)
+            });
         });
+
+        // add gotoMovement entry to goto menu
+        me.alternativesPreferencesMenu.menu.add(preferencesItems);
+    }, 
+
+    updatePreferences: function (name, query) {
+        var me = this;
+
+        var newPreferencesItems = [];
+
+        newPreferencesItems.push({
+            text: name,
+            handler: Ext.bind(me.setAlternativePreferences, me, query, true)
+        });
+
+        me.alternativesPreferencesMenu.menu.add(newPreferencesItems);
+
     },
     
     showMovement: function (menuItem, event, movementId) {
         var me = this;
         me.verovioImageView.showMovement(movementId);
+    },
+
+    setAlternativePreferences: function (menuItem, event, queryStr) {
+        var me = this;
+
+        console.log(menuItem);
+        console.log(event);
+        console.log(queryStr)
+        
+        if (queryStr.length > 0) {
+            query = new Set(queryStr.split(","));
+        } else {
+            query = new Set();
+        }
+
+        console.log(query)
+
+        me.verovioImageView.showSelection(query);
+        // TODO
     },
     
     gotoMeasureDialog: function () {
@@ -133,6 +206,21 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
         }).show();
     },
 
+    saveAlternativesPreferenceDialog: function () {
+        var me = this;
+
+        querySet = me.verovioImageView.getAppXPath();
+        query = [...querySet].join(",");
+
+        Ext.create('EdiromOnline.view.window.source.SaveAlternativesPreference', {
+            callback: Ext.bind(function (name) {
+                console.log("We are in callback")
+                this.fireEvent('savePreference', this, name, query);
+            },
+            me)
+        }).show();
+    },
+
     /* 
      * Call showMeasure of corresponding VerovioImageView.
      * @param {string} movementId - The XML-ID of the selected movement.
@@ -142,5 +230,107 @@ Ext.define('EdiromOnline.view.window.source.AlternativesVerovioView', {
     showMeasure: function(movementId, measureId, measureCount){
         var me = this;
         me.verovioImageView.showMeasure(movementId, measureId);
+    }
+});
+
+Ext.define('EdiromOnline.view.window.source.SaveAlternativesPreference', {
+
+    extend: 'Ext.window.Window',
+
+    requires: [
+        'Ext.form.field.Text',
+        'Ext.form.ComboBox',
+    ],
+
+	cls: 'gotoDialogue',
+	bodyBorder: false,
+	
+    height: 140,
+    width: 320,
+
+    modal: true,
+    resizable: false,
+
+    layout: {
+        type: 'vbox',
+        align: 'stretch',
+        padding: 5
+    },
+
+    padding: 0,
+
+    initComponent: function() {
+        var me = this;
+
+        Ext.apply(me, me.config);
+
+        me.title = 'Save this custom version'; //getLangString('view.window.source.SourceView_GotoMsg_Title');
+
+        me.field = Ext.create('Ext.form.field.Text', {
+            name: 'name',
+            fieldLabel: 'Version Name', //getLangString('view.window.source.SourceView_GotoMsg_Measure'),
+            allowBlank: false
+        });
+        
+        me.savePreferenceButton = Ext.create('Ext.button.Button', {
+            id: 'savePreferenceBtn',
+            cls: 'saveButton',
+            text: 'Save', //getLangString('view.desktop.TaskBar_about'),
+            handler: me.saveFn,
+            scope: me
+        });
+
+        me.items = [
+            me.field, me.savePreferenceButton,
+            {
+                xtype: 'panel',
+                layout: 'hbox',
+                items: [
+                    { xtype: 'component', flex: 1 },
+                    {
+                        text: getLangString('global_cancel'),
+                        handler: me.close,
+                        scope: me
+                    },
+                    {
+                        text: getLangString('global_execute'),
+                        handler: me.saveFn,
+                        scope: me
+                    }
+                ]
+            }
+        ];
+
+        me.callParent();
+
+        me.on('afterrender', me.initKeys, me, {single: true});
+    },
+
+    initKeys: function() {
+        var me = this;
+        var map = me.getKeyMap();
+
+        map.addBinding({
+            key: Ext.EventObject.ENTER,
+            fn: me.saveFn,
+            scope: me
+        });
+
+        map.addBinding({
+            key: Ext.EventObject.ESC,
+            fn: me.close,
+            scope: me
+        });
+
+        map.enable();
+    },
+
+    saveFn: function(button, event) {
+        var me = this;
+        console.log("We are in saveFn")
+
+        //TODO: Validierung
+        me.callback(me.field.getValue());
+        me.close();
     }
 });

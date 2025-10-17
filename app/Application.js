@@ -33,6 +33,7 @@ Ext.define('EdiromOnline.Application', {
         'desktop.TopBar',
         'navigator.Navigator',
         'window.about.AboutWindow',
+        'window.pdf.PDFWindow',
         'window.AnnotationView',
         'window.HeaderView',
         'window.HelpWindow',
