@@ -279,8 +279,33 @@ function setupApparatusInteraction() {
             let $appEnd = $("#output svg g.systemMilestoneEnd." + appRef.id);
             if ($appRendering.hasClass("systemElementStart") && $appEnd.length > 0 && !isBetweenEmpty($appRendering, $appEnd)) {
                 console.log(`App ${appRef.id} spans several measures!`)
-                $appRendering = $appRendering.nextUntil($appEnd).addBack().add($appEnd);
-                // TODO: extend also to next system if necessary
+                
+                let collected = $();
+                let $start = $appRendering;
+
+                while ($start.length) {
+
+                    // If they are siblings the normal nextUntil works
+                    collected = collected.add($start.nextUntil($appEnd)).add($start, $appEnd);
+
+                    if ($start.parent()[0] === $appEnd.parent()[0]) {
+                        console.log("Same parent")
+                        break;
+                    }
+                    else {
+                        console.log("Not same parent")
+                    }
+
+                    // Not siblings climb up
+                    let $parent = $start.parent();
+
+                    // Move start to the parent's first child (same hierarchical level)
+                    $start = $parent.next().children().first();
+
+                    // Continue loop until siblings are reached
+                }
+
+                $appRendering = collected;
             } else {
                 console.log(`App ${appRef.id} empty!`)
                 const svgNS = "http://www.w3.org/2000/svg";
