@@ -512,8 +512,8 @@ function showApparatusSelection(appRef) {
             z-index: 1000;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
-            max-width: 700px;
-            max-height: 80vh;
+            width: 80%;
+            height: 80%;
             overflow-y: auto;
             font-family: Arial, sans-serif;
             text-align: center;
@@ -561,7 +561,7 @@ function showApparatusSelection(appRef) {
     // Use setTimeout to allow the UI to update, then load content
     setTimeout(() => {
         // Build the actual content
-        let selectionHtml = `<div id="reading-options" style="text-align: left;">`;
+        let selectionHtml = `<div id="reading-options" style="text-align: left; display: flex;">`;
 
         let previewXPathMap = new Map()
         

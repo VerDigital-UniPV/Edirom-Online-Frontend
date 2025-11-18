@@ -179,7 +179,7 @@ body {
     stroke: #FF4400 !important;
     stroke-width: 2px !important;
     fill: #FF4400 !important;
-    opacity: 0.8 !important;
+    opacity: 0.9 !important;
 }
 
 .rdgCurrentPreview path {
@@ -230,6 +230,7 @@ body {
 
 /* Style for the apparatus selection modal */
 .apparatus-selection-option {
+    width: 50%;
     margin: 10px 0;
     padding: 15px;
     border: 1px solid #ddd;
