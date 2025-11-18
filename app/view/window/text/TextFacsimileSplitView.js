@@ -156,7 +156,7 @@ Ext.define('EdiromOnline.view.window.text.TextFacsimileSplitView', {
         var me = this;
 
         if(me.annotationsLoaded) {
-            var annos = Ext.query('#' + me.id + '_textCont span.annotation');
+            var annos = Ext.query('#' + me.id + '_textCont div.annotation');
             Ext.Array.each(annos, function(anno) {
                 Ext.get(anno).show();
             });
@@ -166,7 +166,7 @@ Ext.define('EdiromOnline.view.window.text.TextFacsimileSplitView', {
 
         me.annotationsLoaded = true;
 
-        var tpl = Ext.DomHelper.createTemplate('<span id="{0}" class="annotation {1} {2} {3}" data-edirom-annot-id="{3}"></span>');
+        var tpl = Ext.DomHelper.createTemplate('<div class="annotation"><div id="{0}" class="annotIcon {1} {2} {3}" data-edirom-annot-id="{3}"></div></div>');
         
         tpl.compile();
 
@@ -183,6 +183,10 @@ Ext.define('EdiromOnline.view.window.text.TextFacsimileSplitView', {
             Ext.Array.each(plist, function(p) {
                 var targetId = p.id.substring(annoId.length + 2);
                 var target = me.el.getById(me.id + '_' + targetId);
+
+                if (!target) {
+                    return;
+                }
 
                 var shape = tpl.append(target, [me.id + '_' + p.id, categories, priority, annotation.get('id')], true);
                 
@@ -257,7 +261,7 @@ Ext.define('EdiromOnline.view.window.text.TextFacsimileSplitView', {
 
     hideAnnotations: function() {
         var me = this;
-        var annos = Ext.query('#' + me.id + '_textCont span.annotation');
+        var annos = Ext.query('#' + me.id + '_textCont div.annotation');
         Ext.Array.each(annos, function(anno) {
             var a = Ext.get(anno);
             a.setVisibilityMode(Ext.Element.DISPLAY);
@@ -281,6 +285,7 @@ Ext.define('EdiromOnline.view.window.text.TextFacsimileSplitView', {
         me.annotMenu =  Ext.create('Ext.button.Button', {
             text: getLangString('view.window.text.TextView_annotMenu'),
             indent: false,
+            cls: 'menuButton',
             menu : {
                 items: [
                     me.toggleAnnotationVisibility

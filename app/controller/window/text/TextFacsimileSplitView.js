@@ -84,29 +84,6 @@ Ext.define('EdiromOnline.controller.window.text.TextFacsimileSplitView', {
                 me.chaptersLoaded(chapters, view);
             }, this)
         );
-    },
-    
-    onAfterImageChanged: function(view) {
-        var uri = view.uri;
-        
-        window.doAJAXRequest('data/xql/getText.xql',
-            'GET',
-            {
-                uri: uri,
-                idPrefix: view.id + '_',
-                page: view.getActivePage()
-            },
-            Ext.bind(function(response){
-                this.contentLoaded(view, response.responseText);
-            }, this)
-        );
-    },
-    
-    contentLoaded: function(view, content) {
-
-        var me = this;
-
-        view.setContent(content);
 
         window.doAJAXRequest('data/xql/getAnnotationInfos.xql',
             'GET',
@@ -134,6 +111,33 @@ Ext.define('EdiromOnline.controller.window.text.TextFacsimileSplitView', {
         );
     },
     
+    onAfterImageChanged: function(view) {
+        var uri = view.uri;
+        
+        window.doAJAXRequest('data/xql/getText.xql',
+            'GET',
+            {
+                uri: uri,
+                idPrefix: view.id + '_',
+                page: view.getActivePage(),
+                omitLineNumbering: true
+            },
+            Ext.bind(function(response){
+                this.contentLoaded(view, response.responseText);
+            }, this)
+        );
+    },
+    
+    contentLoaded: function(view, content) {
+
+        var me = this;
+
+        view.setContent(content);
+        view.annotationsLoaded = false;
+
+        this.onAnnotationsVisibilityChange(view, view.annotationsVisible);        
+    },
+    
     chaptersLoaded: function(chapters, view) {
         view.setChapters(chapters);
     },
@@ -145,12 +149,12 @@ Ext.define('EdiromOnline.controller.window.text.TextFacsimileSplitView', {
     onAnnotationsVisibilityChange: function(view, visible) {
         var me = this;
 
-        if(visible && view.getActivePage() !== null)
+        if(visible && view.getActivePage() !== null) // TODO: remove check on active page?
             window.doAJAXRequest('data/xql/getAnnotationsInText.xql',
                 'GET', 
                 {
                     uri: view.uri,
-                    page: view.getActivePage()
+                    //page: view.getActivePage() // not in backend
                 },
                 Ext.bind(function(response){
                     var data = response.responseText;
@@ -167,6 +171,10 @@ Ext.define('EdiromOnline.controller.window.text.TextFacsimileSplitView', {
             view.hideAnnotations();
     },
     
+    annotationsLoaded: function(annotations, view) {
+        view.showAnnotations(annotations);
+    },
+
     onGotoChapter: function(view, pageId) {
         view.gotoPage(pageId);
     },
