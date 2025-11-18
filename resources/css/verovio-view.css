@@ -176,20 +176,20 @@ body {
 /* CSS for the alternative selector view */
 /* CSS for apparatus preview highlighting */
 .rdgCurrentPreview {
-    stroke: #ff6b6b !important;
+    stroke: #FF4400 !important;
     stroke-width: 2px !important;
-    fill: #ff6b6b !important;
+    fill: #FF4400 !important;
     opacity: 0.8 !important;
 }
 
 .rdgCurrentPreview path {
-    stroke: #ff6b6b !important;
+    stroke: #FF4400 !important;
     stroke-width: 2px !important;
-    fill: #ff6b6b !important;
+    fill: #FF4400 !important;
 }
 
 .rdgCurrentPreview text {
-    fill: #ff6b6b !important;
+    fill: #FF4400 !important;
     font-weight: bold !important;
 }
 
@@ -214,16 +214,18 @@ body {
 /* Highlight apparatus elements that are selectable */
 .rdgSelectable {
     cursor: pointer;
-    outline: 10px dashed blue;
+    stroke: #8A9DFF !important;
+    stroke-width: 2px !important;
+    fill: #8A9DFF !important;
     opacity: 0.7;
 }
 
 .rdgSelectableHighlight {
-    opacity: 1;
-    stroke: #007bff;
-    stroke-width: 2px;
-    outline: 10px dashed red;
     cursor: pointer;
+    stroke: #2E51FF !important;
+    stroke-width: 2px !important;
+    fill: #2E51FF !important;
+    opacity: 1;
 }
 
 /* Style for the apparatus selection modal */
