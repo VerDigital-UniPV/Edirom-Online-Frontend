@@ -249,11 +249,14 @@ function retrieveApp(meiDOM) {
         let appId = app.getAttribute("xml:id");
         let section = app.closest("section")?.getAttribute("xml:id");
         let measure = app.closest("measure")?.getAttribute("n");
+        let corresp = app.getAttribute("corresp");
+        let annotID = corresp ? corresp.replace("#", "") : null;
 
         meiApps.push({
             id: appId,
             section: section,
-            measure: measure
+            measure: measure,
+            annotID: annotID
         });
     });
 
@@ -268,6 +271,25 @@ function getAppById(appId) {
     }
     return null;
 }
+
+function getAnnotById(annotId) {
+    const annots = meiDOM.getElementsByTagName("annot");
+    for (let i = 0; i < annots.length; i++) {
+        const id = annots[i].getAttributeNS("http://www.w3.org/XML/1998/namespace", "id");
+        if (id === annotId) return annots[i];
+    }
+    return null;
+}
+
+function getElementById(liId) {
+    const elements = meiDOM.getElementsByTagName("*");
+    for (let i = 0; i < elements.length; i++) {
+        const id = elements[i].getAttributeNS("http://www.w3.org/XML/1998/namespace", "id");
+        if (id === liId) return elements[i];
+    }
+    return null;
+}
+
 
 // New function to setup apparatus interaction
 function setupApparatusInteraction() {
@@ -522,6 +544,19 @@ function showApparatusSelection(appRef) {
         return;
     }
 
+    const annotEl = appRef.annotID ? getAnnotById(appRef.annotID) : null;
+    let annotTitle = ""
+    let annotText = "";
+    if (!annotEl) {
+        console.error(`Annot with id ${appRef.annotID} not found in MEI DOM.`);
+    }
+    else {
+        annotTitle = annotEl.querySelector("title").innerHTML
+        const ps = annotEl.querySelectorAll("p")
+        annotText = Array.from(ps).reduce((acc, p) => acc + p.innerHTML, "");
+    }
+    
+
     const children = Array.from(appEl.children);
 
     // Immediately display the window with loading indicator
@@ -543,9 +578,10 @@ function showApparatusSelection(appRef) {
             font-family: Arial, sans-serif;
             text-align: center;
         ">
-            <h3 style="margin-top: 0;">Select Reading for Apparatus ${appRef.id}</h3>
+            <h3 style="margin-top: 0;">Select the alternative version</h3>
+            <h4 style="margin-top: 0;">${annotTitle}</h3>
+            <span><small>${annotText}</small></span>
             <div id="apparatus-content">
-                <!-- Loading indicator (clone the existing loader) -->
                 <div class="loading-container" style="padding: 40px;">Loading previews...</div>
             </div>
             <div style="margin-top: 15px; text-align: center;">
@@ -592,27 +628,37 @@ function showApparatusSelection(appRef) {
         
         children.forEach((child) => {
             const childId = child.getAttribute("xml:id");
-            const sourceAttr = child.getAttribute("source") || "edition";
             const corresp = child.getAttribute("corresp");
+            let liID =  corresp ? corresp.replace("#", "") : null;
             let previewXPath = new Set(basicPreviewXPath);
             // Preview XPath with/without corresp 
             updatePreviewXPath(corresp, previewXPath, childId);
             previewXPathMap.set(childId, previewXPath);
+            
+            const liEl = liID ? getElementById(liID) : null;
+            let versionTitle = "";
+            let versionText = "";
+            if (!liEl) {
+                console.error(`No element with id ${liID} found in MEI DOM.`);
+            }
+            else {
+                const title = liEl.querySelector("title")
+                if (title) {
+                    versionTitle = title.innerHTML
+                }
+                versionText = liEl.innerHTML;
+            }
+            
+            
 
-            const sources = sourceAttr.split(" ");
-            let versionText = sources
-                .map((source) => versions.get(source) || source)
-                .join(" / ");
-                
             selectionHtml += `
                 <div class="apparatus-selection-option" 
                     data-app-ref-id="${appRef.id}"
                     data-preview-xpath="${previewXPath}"
                     data-reading-id="${childId}">
                     <div style="margin-bottom: 10px;">
-                        <strong>${versionText}</strong>
-                        <br><small>ID: ${childId}</small>
-                        <br><small>Correspondence group: ${corresp}</small>
+                        <strong>${versionTitle}</strong>
+                        <br><small>${versionText}</small>
                     </div>
                     <div id="preview-${childId}" class="apparatus-preview-container">
                         <span style="color: #666;">Loading preview...</span>
