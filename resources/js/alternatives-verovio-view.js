@@ -333,29 +333,50 @@ function setupApparatusInteraction() {
                 const svgNS = "http://www.w3.org/2000/svg";
                 const $star = $(document.createElementNS(svgNS, "polygon"))
                 .attr({
-                    points: "150,0 185.4,105.3 300,114.6 207.3,185.4 242.7,300 150,229.2 57.3,300 92.7,185.4 0,114.6 114.6,105.3",
+                    points: "300,0 370.8,210.6 600,229.2 414.6,370.8 485.4,600 300,458.4 114.6,600 185.4,370.8 0,229.2 229.2,210.6",
                     fill: "gold",
                     stroke: "black",
                     'stroke-width': 2
                 });
 
-                // Find the last visible SVG element before $appRendering
-                const $prev = $appRendering.prevAll().filter(function () {
-                    return this.getBBox !== undefined; // Must be an SVG graphics element
-                }).first();
+                function isVisibleGraphic(el) {
+                    //return el.getBBox !== undefined && !el.classList.contains("sb");
+                    return el.classList.contains("measure");
+                }
+
+                // Find previous and next relevant SVG element
+                const $prev = $appRendering.prevAll().filter(function () { return isVisibleGraphic(this); }).first();
+                const $next = $appRendering.nextAll().filter(function () { return isVisibleGraphic(this); }).first();
+
+                console.log(
+                    "prev:",
+                    $prev.length ? $prev.attr("data-id") : null,
+                    "next:",
+                    $next.length ? $next.attr("data-id") : null
+                );
+
+                let x = 0, y = 0;
 
                 if ($prev.length > 0) {
-                    const bbox = $prev[0].getBBox(); // Get bounding box of the element
+                    const bboxPrev = $prev[0].getBBox();
+                    x = bboxPrev.x + bboxPrev.width + 10;
+                    y = bboxPrev.y - 600;            // baseline placement above prev
 
-                    // Position the star just right next to it
-                    const x = bbox.x + bbox.width + 10;
-                    const y = bbox.y - 10; // Add 10px spacing
+                    if ($next.length > 0) {
+                        const bboxNext = $next[0].getBBox();
 
-                    $star.attr("transform", `translate(${x}, ${y})`);
+                        // Ensure star stays above both prev and next
+                        const highestY = Math.min(bboxPrev.y, bboxNext.y);
+                        y = highestY - 600;
+                    }
+                    else {
+                        console.log("No next element found.")
+                    }
                 } else {
-                    console.warn('No suitable previous element found. Placing star at default position.');
-                    $star.attr("transform", "translate(0, 0)");
+                    console.warn("No suitable previous element found. Placing star at default position.");
                 }
+
+                $star.attr("transform", `translate(${x}, ${y})`);
 
                 // Append the star to the group
                 $appRendering.append($star);
