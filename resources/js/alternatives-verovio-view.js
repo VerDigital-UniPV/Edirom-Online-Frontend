@@ -53,9 +53,6 @@ function showMovement(movementId) {
     var initHeight = Math.floor(height * 100.0 / 33.0) - 35;
     var initWidth = Math.floor(width * 100.0 / 33.0);
 
-    var initHeight = Math.floor(height * 100.0 / 33.0) - 35;
-    var initWidth = Math.floor(width * 100.0 / 33.0);
-
     const options = {
         scale: 25,
         pageHeight: initHeight,
@@ -600,7 +597,7 @@ function showApparatusSelection(appRef) {
             text-align: center;
         ">
             <h3 style="margin-top: 0;">Select the alternative version</h3>
-            <h4 style="margin-top: 0;">${annotTitle}</h3>
+            <h4 style="margin-top: 0;">${annotTitle}</h4>
             <span><small>${annotText}</small></span>
             <div id="apparatus-content">
                 <div class="loading-container" style="padding: 40px;">Loading previews...</div>
